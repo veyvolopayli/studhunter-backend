@@ -1,5 +1,9 @@
 package com.example
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.client.builder.AwsClientBuilder
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.example.data.models.User
 import com.example.data.requests.AuthRequest
 import com.example.data.responses.AuthResponse
@@ -9,6 +13,7 @@ import com.example.security.hashing.SaltedHash
 import com.example.security.token.TokenClaim
 import com.example.security.token.TokenConfig
 import com.example.security.token.TokenService
+import com.example.yandexcloud.YcUserDataSource
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -22,6 +27,18 @@ fun Route.signUp(
     hashingService: HashingService,
     userDataSource: UserDataSource
 ) {
+
+    val awsAccessKey = System.getenv("AWS_ACCESS")
+    val awsSecretKey = System.getenv("AWS_SECRET")
+    val awsCreds = BasicAWSCredentials(awsAccessKey, awsSecretKey)
+    val s3Client = AmazonS3ClientBuilder.standard().withCredentials(AWSStaticCredentialsProvider(awsCreds))
+        .withEndpointConfiguration(
+            AwsClientBuilder.EndpointConfiguration(
+                "storage.yandexcloud.net", "ru-central1"
+            )
+        ).build()
+
+    val ycUserDataSource = YcUserDataSource(s3Client)
 
     post("signup") {
         val request = call.receiveNullable<AuthRequest>() ?: kotlin.run {
@@ -42,6 +59,7 @@ fun Route.signUp(
             password = saltedHash.hash,
             salt = saltedHash.salt
         )
+        ycUserDataSource.insertUser(user)
         val wasAcknowledged = userDataSource.insertUser(user)
         if (!wasAcknowledged) {
             call.respond(HttpStatusCode.Conflict)
