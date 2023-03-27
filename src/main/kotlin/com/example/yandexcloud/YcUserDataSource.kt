@@ -1,6 +1,7 @@
 package com.example.yandexcloud
 
 import com.amazonaws.services.s3.AmazonS3
+import com.example.BUCKET_NAME
 import com.example.data.models.User
 import com.example.data.userservice.UserDataSource
 import com.google.gson.Gson
@@ -17,18 +18,15 @@ import kotlin.coroutines.suspendCoroutine
 
 class YcUserDataSource(private val s3Client: AmazonS3) {
 
-    private val bucketName = "stud-hunter-bucket"
-
-    suspend fun getUserByUsername(username: String): User = suspendCoroutine { cont ->
-        val userObject = s3Client.getObject(bucketName, "$username.json")
+    suspend fun getUserByUsername(username: String): User? = suspendCoroutine { cont ->
+        val userObject = s3Client.getObject(BUCKET_NAME, "users/$username.json")
         val jsonContent = userObject.objectContent.bufferedReader().use { it.readText() }
-        cont.resume(Json.decodeFromString<User>(jsonContent))
+        cont.resume(Gson().fromJson(jsonContent, User::class.java))
     }
 
-    fun insertUser(user: User): Boolean {
-        val uid = UUID.randomUUID()
+    suspend fun insertUser(user: User): Boolean = suspendCoroutine { cont ->
         val userJson = Gson().toJson(user)
-        val insertUser = s3Client.putObject(bucketName, "${ user.username }.json", userJson)
-        return insertUser != null
+        val insertUser = s3Client.putObject(BUCKET_NAME, "users/${ user.username }.json", userJson)
+        cont.resume(insertUser != null)
     }
 }

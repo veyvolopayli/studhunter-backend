@@ -1,4 +1,4 @@
-package com.example
+package com.example.routes
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
@@ -23,22 +23,22 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.apache.commons.codec.digest.DigestUtils
 
+private val awsAccessKey = System.getenv("AWS_ACCESS")
+private val awsSecretKey = System.getenv("AWS_SECRET")
+private val awsCreds = BasicAWSCredentials(awsAccessKey, awsSecretKey)
+private val s3Client = AmazonS3ClientBuilder.standard().withCredentials(AWSStaticCredentialsProvider(awsCreds))
+    .withEndpointConfiguration(
+        AwsClientBuilder.EndpointConfiguration(
+            "storage.yandexcloud.net", "ru-central1"
+        )
+    ).build()
+
+private val ycUserDataSource = YcUserDataSource(s3Client)
+
 fun Route.signUp(
     hashingService: HashingService,
     userDataSource: UserDataSource
 ) {
-
-    val awsAccessKey = System.getenv("AWS_ACCESS")
-    val awsSecretKey = System.getenv("AWS_SECRET")
-    val awsCreds = BasicAWSCredentials(awsAccessKey, awsSecretKey)
-    val s3Client = AmazonS3ClientBuilder.standard().withCredentials(AWSStaticCredentialsProvider(awsCreds))
-        .withEndpointConfiguration(
-            AwsClientBuilder.EndpointConfiguration(
-                "storage.yandexcloud.net", "ru-central1"
-            )
-        ).build()
-
-    val ycUserDataSource = YcUserDataSource(s3Client)
 
     post("signup") {
         val request = call.receiveNullable<AuthRequest>() ?: kotlin.run {
@@ -59,8 +59,8 @@ fun Route.signUp(
             password = saltedHash.hash,
             salt = saltedHash.salt
         )
-        ycUserDataSource.insertUser(user)
-        val wasAcknowledged = userDataSource.insertUser(user)
+        val wasAcknowledged = ycUserDataSource.insertUser(user)
+//        val wasAcknowledged = userDataSource.insertUser(user)
         if (!wasAcknowledged) {
             call.respond(HttpStatusCode.Conflict)
             return@post
@@ -81,8 +81,9 @@ fun Route.signIn(
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
+        val user = ycUserDataSource.getUserByUsername(request.username)
 
-        val user = userDataSource.getUserByUsername(request.username)
+//        val user = userDataSource.getUserByUsername(request.username)
         if (user == null) {
             call.respond(HttpStatusCode.Conflict, "Incorrect username or password")
             return@post
