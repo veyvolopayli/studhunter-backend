@@ -23,6 +23,7 @@ fun Application.configureRouting(
         getSecretInfo()
         createPublication(publicationService)
         getAllPublications(publicationService)
+        getPublicationById()
 //        uploadImage(publicationService)
     }
 }

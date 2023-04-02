@@ -32,11 +32,11 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
         }*/
     }
 
-    override suspend fun getPublicationByCategory(category: String): ArrayList<Publication> {
-        return arrayListOf()
+    override suspend fun getPublicationByCategory(category: String): List<Publication> {
+        return getAllPublications().filter { it.category == category }
     }
 
-    override suspend fun getCurrentPublication(publicationId: String): Publication {
+    override suspend fun getPublicationById(publicationId: String): Publication? {
         val pubObj = s3.getObject(BUCKET_NAME, "publications/$publicationId.json")
         val pubContent = pubObj.objectContent.bufferedReader().use { it.readText() }
         return Gson().fromJson(pubContent, Publication::class.java)
@@ -44,13 +44,13 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
 
     override suspend fun insertPublication(publication: Publication): Boolean {
         val pubJson = Gson().toJson(publication)
-        val insertPub = s3.putObject(BUCKET_NAME, "publications/${publication.id}.json", pubJson)
+        val insertPub = s3.putObject(BUCKET_NAME, "publications/${publication.category}/${publication.id}/${publication.id}.json", pubJson)
         return insertPub != null
     }
 
-    override suspend fun insertFile(file: File, fileName: String): Boolean {
-        val insertFile = s3.putObject(BUCKET_NAME, "publications/images/$fileName", file)
-        return insertFile != null
+    override suspend fun insertFile(file: File, fileName: String, publication: Publication): Boolean {
+        val result = s3.putObject(BUCKET_NAME, "publications/${publication.category}/${publication.id}/images/$fileName", file)
+        return result != null
     }
 
     fun generatePresignedUrl(objectKey: String): String {

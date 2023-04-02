@@ -5,7 +5,6 @@ import java.util.*
 
 @Serializable
 data class PublicationRequest(
-    val imageUrl: String,
     val title: String,
     val description: String,
     val price: String,
