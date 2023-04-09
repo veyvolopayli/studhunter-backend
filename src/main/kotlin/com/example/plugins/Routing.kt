@@ -21,9 +21,7 @@ fun Application.configureRouting(
         signUp(hashingService, userDataSource)
         authenticate()
         getSecretInfo()
-        createPublication(publicationService)
-        getAllPublications(publicationService)
-        getPublicationById()
-//        uploadImage(publicationService)
+        getPublicationRoutes(publicationService)
+        postPublicationRoutes(publicationService)
     }
 }

@@ -14,6 +14,7 @@ import com.example.plugins.*
 import com.example.security.hashing.SHA256HashingService
 import com.example.security.token.JwtTokenService
 import com.example.security.token.TokenConfig
+import com.example.yandexcloud.YcUserDataSource
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
 
@@ -26,11 +27,11 @@ fun main(args: Array<String>): Unit =
 @Suppress("unused") // application.conf references the main function. This annotation prevents the IDE from marking it as unused.
 fun Application.module() {
 
-    val mongoPassword = System.getenv("MONGO_PW")
+    /*val mongoPassword = System.getenv("MONGO_PW")
     val dbName = "seefood"
     val db = KMongo.createClient(
         connectionString = "mongodb+srv://veyvolopayli:$mongoPassword@cluster0.d8tkum5.mongodb.net/$dbName?retryWrites=true&w=majority"
-    ).coroutine.getDatabase(dbName)
+    ).coroutine.getDatabase(dbName)*/
 
     val awsAccessKey = System.getenv("AWS_ACCESS")
     val awsSecretKey = System.getenv("AWS_SECRET")
@@ -42,7 +43,8 @@ fun Application.module() {
             )
         ).build()
 
-    val userDataSource = MongoUserDataSource(db)
+//    val userDataSource = MongoUserDataSource(db)
+    val userDataSource = YcUserDataSource(s3)
 
     val tokenService = JwtTokenService()
     val tokenConfig = TokenConfig(
@@ -55,9 +57,6 @@ fun Application.module() {
     val hashingService = SHA256HashingService()
 
     val publicationService = YcPublicationService(s3)
-
-//    println(publicationService.generatePresignedUrl("publications/images/image_6783.png"))
-
 
     configureSockets()
     configureSerialization()

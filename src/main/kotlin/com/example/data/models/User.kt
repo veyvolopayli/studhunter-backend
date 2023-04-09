@@ -8,6 +8,8 @@ data class User(
     val username: String,
     val password: String,
     val salt: String,
-    val id: String = UUID.randomUUID().toString()
+    val id: String = UUID.randomUUID().toString(),
+    val rating: Float = 5.0F,
+    val fullName: String = ""
     /*@BsonId val id: ObjectId = ObjectId()*/
 )

@@ -16,17 +16,16 @@ import kotlin.collections.ArrayList
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class YcUserDataSource(private val s3Client: AmazonS3) {
-
-    suspend fun getUserByUsername(username: String): User? = suspendCoroutine { cont ->
+class YcUserDataSource(private val s3Client: AmazonS3) : UserDataSource {
+    override suspend fun getUserByUsername(username: String): User? {
         val userObject = s3Client.getObject(BUCKET_NAME, "users/$username.json")
         val jsonContent = userObject.objectContent.bufferedReader().use { it.readText() }
-        cont.resume(Gson().fromJson(jsonContent, User::class.java))
+        return Gson().fromJson(jsonContent, User::class.java)
     }
 
-    suspend fun insertUser(user: User): Boolean = suspendCoroutine { cont ->
+    override suspend fun insertUser(user: User): Boolean {
         val userJson = Gson().toJson(user)
         val insertUser = s3Client.putObject(BUCKET_NAME, "users/${ user.username }.json", userJson)
-        cont.resume(insertUser != null)
+        return insertUser != null
     }
 }

@@ -6,11 +6,11 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 interface PublicationService {
-    suspend fun getAllPublications(): ArrayList<Publication>
+    suspend fun getAllPublications(): List<Publication>
 
-    suspend fun getPublicationByCategory(category: String): List<Publication>
+    suspend fun getPublicationsByCategory(category: String): List<Publication>
 
-    suspend fun getPublicationById(publicationId: String): Publication?
+    suspend fun getPublicationById(category: String, publicationId: String): Publication?
 
     suspend fun insertPublication(publication: Publication): Boolean
 

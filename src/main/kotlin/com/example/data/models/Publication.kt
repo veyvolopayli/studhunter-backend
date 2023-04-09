@@ -3,6 +3,7 @@ package com.example.data.models
 import kotlinx.serialization.Serializable
 import java.util.*
 
+@Serializable
 data class Publication(
     val id: String = UUID.randomUUID().toString(),
     val imageUrl: String? = null,
