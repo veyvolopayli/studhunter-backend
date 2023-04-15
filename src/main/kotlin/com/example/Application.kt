@@ -15,6 +15,7 @@ import com.example.security.hashing.SHA256HashingService
 import com.example.security.token.JwtTokenService
 import com.example.security.token.TokenConfig
 import com.example.yandexcloud.YcUserDataSource
+import io.github.cdimascio.dotenv.Dotenv
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.reactivestreams.KMongo
 
@@ -33,8 +34,10 @@ fun Application.module() {
         connectionString = "mongodb+srv://veyvolopayli:$mongoPassword@cluster0.d8tkum5.mongodb.net/$dbName?retryWrites=true&w=majority"
     ).coroutine.getDatabase(dbName)*/
 
-    val awsAccessKey = System.getenv("AWS_ACCESS")
-    val awsSecretKey = System.getenv("AWS_SECRET")
+    val dotEnv: Dotenv = Dotenv.load()
+
+    val awsAccessKey = dotEnv.get("AWS_ACCESS")
+    val awsSecretKey = dotEnv.get("AWS_SECRET")
     val awsCreds = BasicAWSCredentials(awsAccessKey, awsSecretKey)
     val s3 = AmazonS3ClientBuilder.standard().withCredentials(AWSStaticCredentialsProvider(awsCreds))
         .withEndpointConfiguration(
@@ -51,7 +54,7 @@ fun Application.module() {
         issuer = environment.config.property("jwt.issuer").getString(),
         audience = environment.config.property("jwt.audience").getString(),
         expiresIn = 365L * 1000L * 60L * 60L * 24L,
-        secret = System.getenv("JWT_SECRET")
+        secret = dotEnv.get("JWT_SECRET")
     )
 
     val hashingService = SHA256HashingService()

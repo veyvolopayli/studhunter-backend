@@ -5,7 +5,7 @@ val logback_version: String by project
 plugins {
     kotlin("jvm") version "1.8.10"
     id("io.ktor.plugin") version "2.2.4"
-                id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10"
 }
 
 group = "com.example"
@@ -15,6 +15,12 @@ application {
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
+}
+
+ktor {
+    fatJar {
+        archiveFileName.set("seefood-fat.jar")
+    }
 }
 
 repositories {
@@ -40,5 +46,6 @@ dependencies {
     implementation("org.litote.kmongo:kmongo-coroutine:4.8.0")
     implementation("org.litote.kmongo:kmongo-reactor:4.8.0")
     implementation("commons-codec:commons-codec:1.15")
+    implementation("io.github.cdimascio:dotenv-java:2.3.1")
 
 }
