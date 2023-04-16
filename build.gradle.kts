@@ -6,26 +6,24 @@ plugins {
     kotlin("jvm") version "1.8.10"
     id("io.ktor.plugin") version "2.2.4"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10"
+    id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
 group = "com.example"
 version = "0.0.1"
 application {
-    mainClass.set("io.ktor.server.cio.EngineMain")
+    mainClass.set("io.ktor.server.netty.EngineMain")
+    project.setProperty("mainClassName", mainClass.get())
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
-ktor {
-    fatJar {
-        archiveFileName.set("seefood-fat.jar")
-    }
-}
-
 repositories {
     mavenCentral()
 }
+
+val sshAntTask = configurations.create("sshAntTask")
 
 dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
@@ -37,7 +35,7 @@ dependencies {
     implementation("io.ktor:ktor-server-call-logging-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktor_version")
-    implementation("io.ktor:ktor-server-cio-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
@@ -46,6 +44,79 @@ dependencies {
     implementation("org.litote.kmongo:kmongo-coroutine:4.8.0")
     implementation("org.litote.kmongo:kmongo-reactor:4.8.0")
     implementation("commons-codec:commons-codec:1.15")
-    implementation("io.github.cdimascio:dotenv-java:2.3.1")
 
+    sshAntTask("org.apache.ant:ant-jsch:1.10.12")
+}
+
+tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
+    manifest {
+        attributes(
+            "Main-Class" to application.mainClass.get()
+        )
+    }
+}
+
+ant.withGroovyBuilder {
+    "taskdef"(
+        "name" to "scp",
+        "classname" to "org.apache.tools.ant.taskdefs.optional.ssh.Scp",
+        "classpath" to configurations.get("sshAntTask").asPath
+    )
+    "taskdef"(
+        "name" to "ssh",
+        "classname" to "org.apache.tools.ant.taskdefs.optional.ssh.SSHExec",
+        "classpath" to configurations.get("sshAntTask").asPath
+    )
+}
+
+task("deploy") {
+    dependsOn("clean", "shadowJar")
+    ant.withGroovyBuilder {
+        doLast {
+            val knownHosts = File.createTempFile("knownhosts", "txt")
+            val user = "root"
+            val host = "5.181.255.253"
+            val key = file("keys/studhunter-backend-key")
+            val jarFileName = "com.example.seefood-backend-all.jar"
+            try {
+                "scp"(
+                    "file" to file("build/libs/$jarFileName"),
+                    "todir" to "$user@$host:/root/studhunter",
+                    "keyfile" to key,
+                    "trust" to true,
+                    "knownhosts" to knownHosts
+                )
+                "ssh"(
+                    "host" to host,
+                    "username" to user,
+                    "keyfile" to key,
+                    "trust" to true,
+                    "knownhosts" to knownHosts,
+                    "command" to "mv /root/studhunter/$jarFileName /root/studhunter/studhunter.jar"
+                )
+                "ssh"(
+                    "host" to host,
+                    "username" to user,
+                    "keyfile" to key,
+                    "trust" to true,
+                    "knownhosts" to knownHosts,
+                    "command" to "systemctl stop studhunter"
+                )
+                "ssh"(
+                    "host" to host,
+                    "username" to user,
+                    "keyfile" to key,
+                    "trust" to true,
+                    "knownhosts" to knownHosts,
+                    "command" to "systemctl start studhunter"
+                )
+            } finally {
+                knownHosts.delete()
+            }
+        }
+    }
+}
+
+tasks {
+    create("stage").dependsOn("installDist")
 }

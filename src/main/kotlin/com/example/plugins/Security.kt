@@ -11,7 +11,7 @@ fun Application.configureSecurity(config: TokenConfig) {
     
     authentication {
             jwt {
-                realm = this@configureSecurity.environment.config.property("jwt.realm").getString()
+                realm = "ktor sample app"
                 verifier(
                     JWT
                         .require(Algorithm.HMAC256(config.secret))

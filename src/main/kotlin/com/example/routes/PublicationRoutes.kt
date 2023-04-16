@@ -27,17 +27,20 @@ fun Route.getPublicationRoutes(publicationService: PublicationService) {
             if (category == null && id == null) {
                 val publications = publicationService.getAllPublications()
                 call.respond(status = HttpStatusCode.OK, message = publications)
+                return@get
             }
 
             if (category != null && id != null) {
                 val publication = publicationService.getPublicationById(category = category, publicationId = id)
                 if (publication != null) call.respond(status = HttpStatusCode.OK, message = publication)
                 else call.respond(status = HttpStatusCode.BadRequest, message = "Publication doesn't exist")
+                return@get
             }
 
             if (category != null && id == null) {
                 val publications = publicationService.getPublicationsByCategory(category)
                 call.respond(status = HttpStatusCode.OK, message = publications)
+                return@get
             }
 
             call.respond(status = HttpStatusCode.BadRequest, message = "Invalid request")
