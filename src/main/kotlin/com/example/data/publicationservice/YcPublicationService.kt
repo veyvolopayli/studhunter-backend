@@ -13,7 +13,7 @@ import java.util.Date
 
 class YcPublicationService(private val s3: AmazonS3): PublicationService {
     override suspend fun getAllPublications(): List<Publication> {
-        val listObjRequest = ListObjectsV2Request().withBucketName(BUCKET_NAME).withPrefix("publications/")
+        val listObjRequest = ListObjectsV2Request().withBucketName(BUCKET_NAME).withPrefix("publications/pubs")
         val objSummaries = s3.listObjectsV2(listObjRequest).objectSummaries.filter { it.key.endsWith(".json") }
         val publications = objSummaries.map { summary ->
             val obj = s3.getObject(BUCKET_NAME, summary.key)
@@ -42,7 +42,7 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
     }
 
     override suspend fun getPublicationById(category: String, publicationId: String): Publication? {
-        val key = "publications/$category/$publicationId/$publicationId.json"
+        val key = "publications/pubs/$category/$publicationId/$publicationId.json"
         return try {
             val pubObj = s3.getObject(BUCKET_NAME, key)
             val pubContent = pubObj.objectContent.bufferedReader().use { it.readText() }
@@ -55,23 +55,29 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
 
     override suspend fun insertPublication(publication: Publication): Boolean {
         val pubJson = Gson().toJson(publication)
-        val insertPub = s3.putObject(BUCKET_NAME, "publications/${publication.category}/${publication.id}/${publication.id}.json", pubJson)
+        val insertPub = s3.putObject(BUCKET_NAME, "publications/pubs/${publication.category}/${publication.id}/${publication.id}.json", pubJson)
         return insertPub != null
     }
 
-    override suspend fun insertFile(file: File, fileName: String, publication: Publication): Boolean {
-        val result = s3.putObject(BUCKET_NAME, "publications/${publication.category}/${publication.id}/images/$fileName", file)
+    override suspend fun insertFile(file: File, fileName: String, category: String, pubId: String): Boolean {
+        val result = s3.putObject(BUCKET_NAME, "publications/images/$category/$pubId/$fileName", file)
         return result != null
     }
 
-    fun generatePresignedUrl(objectKey: String): String {
-        val exception = Date()
+    data class TemporaryImage(
+        val url: String? = null,
+        val expiresIn: Date? = null
+    )
+
+    override suspend fun generateTemporaryImageUrl(category: String, pubId: String, fileName: String): TemporaryImage {
+        val date = Date()
         var expTimeMillis: Long = Instant.now().toEpochMilli()
         expTimeMillis += 1000 * 60 * 60 * 24 * 7
-        exception.time = expTimeMillis
-        val presignedUrl = s3.generatePresignedUrl(BUCKET_NAME, objectKey, exception)
+        date.time = expTimeMillis
+        val temporaryUrl =
+            s3.generatePresignedUrl(BUCKET_NAME, "publications/images/$category/$pubId/$fileName", date).toString()
 
-        return presignedUrl.toString()
+        return TemporaryImage(url = temporaryUrl, expiresIn = date)
     }
 
 

@@ -27,7 +27,7 @@ fun Application.configureRouting(
         postPublicationRoutes(publicationService)
 
         get("/") {
-            call.respond(message = "Hello, world!", status = HttpStatusCode.OK)
+            call.respond(message = "посоветуйте ониме аниме новичку\nтвое имя\nантон\nа?\nче звал сларк", status = HttpStatusCode.OK)
         }
     }
 }

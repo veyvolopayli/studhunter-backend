@@ -14,5 +14,7 @@ interface PublicationService {
 
     suspend fun insertPublication(publication: Publication): Boolean
 
-    suspend fun insertFile(file: File, fileName: String, publication: Publication): Boolean
+    suspend fun insertFile(file: File, fileName: String, category: String, pubId: String): Boolean
+
+    suspend fun generateTemporaryImageUrl(category: String, pubId: String, fileName: String): YcPublicationService.TemporaryImage
 }

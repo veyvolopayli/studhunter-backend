@@ -16,6 +16,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.UUID
 import kotlin.random.Random
 
 fun Route.getPublicationRoutes(publicationService: PublicationService) {
@@ -23,6 +24,8 @@ fun Route.getPublicationRoutes(publicationService: PublicationService) {
         get("publications") {
             val category = call.parameters["category"]
             val id = call.parameters["id"]
+
+            println("publications/pubs/$category/$id/$id.json")
 
             if (category == null && id == null) {
                 val publications = publicationService.getAllPublications()
@@ -57,20 +60,63 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
 
             multipart.forEachPart { part ->
                 when (part) {
-                    is PartData.FileItem -> parts.add(part)
+                    is PartData.FileItem -> {
+                        parts.add(part)
+                    }
+
                     is PartData.FormItem -> {
                         if (part.name == "publicationData") {
                             val jsonString = part.value
                             publicationRequest = Json.decodeFromString<PublicationRequest>(jsonString)
                         }
                     }
+
                     else -> Unit
                 }
                 part.dispose
             }
 
+            val pubId = UUID.randomUUID().toString()
+            val pubCategory = publicationRequest?.category ?: "Другое"
+
+            val files: List<File> = parts.mapIndexedNotNull { index, fileItem ->
+                val fileName = "image_$index"
+                if (fileItem.name == "images") fileItem.toFile(fileName, ".jpeg")
+                else null
+            }
+            val results = mutableListOf<Boolean>()
+
+            files.forEachIndexed { index, file ->
+//                file.save("build/resources/main/static/images/", file.name)
+                results.add(
+                    publicationService.insertFile(
+                        file = file, fileName = "image_$index", category = pubCategory, pubId = pubId
+                    )
+                )
+            }
+
+            if (results.contains(false)) {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "Критическая ошибка при загрузке изображений"
+                )
+                return@post
+            }
+
+            val cardImage = files[0]
+
+            val cardImageUrl = publicationService.generateTemporaryImageUrl(
+                category = pubCategory,
+                pubId = pubId,
+                fileName = "image_0"
+            )
+
+            println("Дата:")
+            println(cardImageUrl.expiresIn)
+
             val publication = Publication(
-                imageUrl = "example image url",
+                id = pubId,
+                imageUrl = cardImageUrl.url ?: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAMAAACahl6sAAAAOVBMVEXg4OB1dXXX19fd3d2EhIR9fX14eHjJycm2trbb29uurq6goKCZmZmIiIiBgYHNzc2np6e8vLySkpKXK8HrAAABuUlEQVR4nO3Z0bKCIBCAYQNFVCzr/R/2nHU6k8KpJi6wZf7vLu1id9gFhKYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAb249h7pzr5jD29uhospnlfNo4L+boiLKYyZ0iblKYiu/iNER3PTquD9npPgbB98Za0/twH59JVasMtzXo1m+iHny7PrwpysSuebgxCtmOTlkma121l/TFZR2UqXxEebxEO/87QZlZ3inpeCPzVftkojUyJp2OWVgKy23qSsbg8evitBSXkUjHzYN9Is0oeWoYkkUKazsxRYlYKa6ldFSfs7K/8tsnUSLrXHAuG1SOXpp5t1LEiQxSe33ZqDJIC4TdkziRJkRN9J1CXFlpIj7J9RvNSd0kiUj1zSVjyiKr4X5yTRIx0kYlY8oinbzfFSaJWFlJSsaUpZpEqimttNkTOpo9nX4TOqbfdEFM6FgQpW7c8OofSrYo1Wwaq9nG1/NhVc2nbj2HD821kuOgeg7o3hyZBj1Hpo9D7M3K+HeIrSmPeq4Vfl3ruOhpnly9vdyEfa1KLkPF7nr66GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPjcD13rCcC3ILx/AAAAAElFTkSuQmCC",
                 title = publicationRequest?.title ?: "",
                 description = publicationRequest?.description ?: "",
                 price = publicationRequest?.price ?: "",
@@ -85,24 +131,6 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
             val publicationUploaded = publicationService.insertPublication(publication)
 
             if (!publicationUploaded) {
-                call.respond(status = HttpStatusCode.BadRequest, message = PublicationResponse(success = false))
-                return@post
-            }
-
-            val files: List<File> = parts.mapNotNull { part ->
-                val random = Random.nextInt(1000, 10000)
-                val fileName = "image_$random"
-                if (part.name == "images") part.toFile(fileName, ".jpeg")
-                else null
-            }
-            val results = mutableListOf<Boolean>()
-
-            files.forEach { file ->
-                file.save("build/resources/main/static/images/", file.name)
-                results.add(publicationService.insertFile(file, file.name, publication))
-            }
-
-            if (results.contains(false)) {
                 call.respond(status = HttpStatusCode.BadRequest, message = PublicationResponse(success = false))
                 return@post
             }
