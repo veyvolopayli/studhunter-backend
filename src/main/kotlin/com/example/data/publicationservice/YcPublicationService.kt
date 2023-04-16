@@ -75,7 +75,7 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
         expTimeMillis += 1000 * 60 * 60 * 24 * 7
         date.time = expTimeMillis
         val temporaryUrl =
-            s3.generatePresignedUrl(BUCKET_NAME, "publications/images/$category/$pubId/$fileName", date).toString()
+            s3.generatePresignedUrl(BUCKET_NAME, "publications/images/$category/$pubId/$fileName.jpeg", date).toString()
 
         return TemporaryImage(url = temporaryUrl, expiresIn = date)
     }

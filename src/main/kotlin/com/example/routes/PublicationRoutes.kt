@@ -90,7 +90,7 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
 //                file.save("build/resources/main/static/images/", file.name)
                 results.add(
                     publicationService.insertFile(
-                        file = file, fileName = "image_$index", category = pubCategory, pubId = pubId
+                        file = file, fileName = "image_$index.jpeg", category = pubCategory, pubId = pubId
                     )
                 )
             }
@@ -104,6 +104,7 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
             }
 
             val cardImage = files[0]
+            cardImage.save("/root/studhunter/pubimages/", "$pubId.jpeg")
 
             val cardImageUrl = publicationService.generateTemporaryImageUrl(
                 category = pubCategory,
