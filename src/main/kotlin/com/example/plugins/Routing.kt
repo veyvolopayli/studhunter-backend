@@ -25,6 +25,7 @@ fun Application.configureRouting(
         getSecretInfo()
         getPublicationRoutes(publicationService)
         postPublicationRoutes(publicationService)
+        imageRoutes()
 
         get("/") {
             call.respond(message = "посоветуйте ониме аниме новичку\nтвое имя\nантон\nа?\nче звал сларк", status = HttpStatusCode.OK)

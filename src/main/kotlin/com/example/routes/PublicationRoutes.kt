@@ -140,3 +140,12 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
         }
     }
 }
+
+fun Route.imageRoutes() {
+    get("images/{id}") {
+        val imageId = call.parameters["id"] ?: return@get call.respond(status = HttpStatusCode.BadRequest, message = "Invalid link")
+        val imageFile = File("/root/studhunter/pubimages/$imageId.jpeg")
+        if (!imageFile.exists()) return@get call.respond(status = HttpStatusCode.NotFound, message = "Image not found")
+        call.respondFile(imageFile)
+    }
+}
