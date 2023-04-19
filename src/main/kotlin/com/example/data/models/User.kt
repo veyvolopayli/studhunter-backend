@@ -10,6 +10,7 @@ data class User(
     val salt: String,
     val id: String = UUID.randomUUID().toString(),
     val rating: Float = 5.0F,
-    val fullName: String = ""
+    val fullName: String = "",
+    val email: String
     /*@BsonId val id: ObjectId = ObjectId()*/
 )

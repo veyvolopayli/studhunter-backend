@@ -1,7 +1,8 @@
 package com.example.routes
 
 import com.example.data.models.User
-import com.example.data.requests.AuthRequest
+import com.example.data.requests.SignInRequest
+import com.example.data.requests.SignUpRequest
 import com.example.data.responses.AuthResponse
 import com.example.data.userservice.UserDataSource
 import com.example.security.hashing.HashingService
@@ -24,15 +25,15 @@ fun Route.signUp(
 ) {
 
     post("signup") {
-        val request = call.receiveNullable<AuthRequest>() ?: kotlin.run {
+        val request = call.receiveNullable<SignUpRequest>() ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
 
         val areFieldsBlank = request.username.isBlank() || request.password.isBlank()
-        val isPwTooShort = request.password.length < 8
+        val isPwTooShort = request.password.length < 6
         if (areFieldsBlank || isPwTooShort) {
-            call.respond(HttpStatusCode.Conflict)
+            call.respond(status = HttpStatusCode.Conflict, message = "Password is too short or empty")
             return@post
         }
 
@@ -40,7 +41,9 @@ fun Route.signUp(
         val user = User(
             username = request.username,
             password = saltedHash.hash,
-            salt = saltedHash.salt
+            salt = saltedHash.salt,
+            email = request.email,
+            fullName = "${request.name} ${request.surname}"
         )
         val wasAcknowledged = userDataSource.insertUser(user)
 //        val wasAcknowledged = userDataSource.insertUser(user)
@@ -60,7 +63,7 @@ fun Route.signIn(
     tokenConfig: TokenConfig
 ) {
     post("signin") {
-        val request = call.receiveNullable<AuthRequest>() ?: kotlin.run {
+        val request = call.receiveNullable<SignInRequest>() ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
