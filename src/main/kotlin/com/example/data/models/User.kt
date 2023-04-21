@@ -5,12 +5,12 @@ import org.bson.types.ObjectId
 import java.util.UUID
 
 data class User(
+    val id: String = UUID.randomUUID().toString(),
     val username: String,
     val password: String,
     val salt: String,
-    val id: String = UUID.randomUUID().toString(),
-    val rating: Float = 5.0F,
-    val fullName: String = "",
+    var rating: Float = 5.0F,
+    val fullName: String,
     val email: String
     /*@BsonId val id: ObjectId = ObjectId()*/
 )

@@ -5,6 +5,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.example.data.publicationservice.YcPublicationService
+import com.example.data.usersservice.YcUsersService
 import io.ktor.server.application.*
 import com.example.plugins.*
 import com.example.security.hashing.SHA256HashingService
@@ -13,6 +14,9 @@ import com.example.security.token.TokenConfig
 import com.example.yandexcloud.YcUserDataSource
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 
 const val BUCKET_NAME = "stud-hunter-bucket"
@@ -59,10 +63,19 @@ fun Application.module() {
 
     val publicationService = YcPublicationService(s3)
 
+    val usersService = YcUsersService(s3)
+
+    runBlocking {
+        withContext(Dispatchers.IO) {
+            usersService.startReviewsTask()
+        }
+    }
+
+
     configureSockets()
     configureSerialization()
     configureMonitoring()
     configureSecurity(tokenConfig)
-    configureRouting(userDataSource, hashingService, tokenService, tokenConfig, publicationService)
+    configureRouting(userDataSource, hashingService, tokenService, tokenConfig, publicationService, usersService)
 
 }

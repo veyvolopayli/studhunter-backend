@@ -1,5 +1,8 @@
 package com.example.routes
 
+import com.example.data.constants.HOST
+import com.example.data.constants.NEW_PUB_IMAGES_PATH
+import com.example.data.constants.SERVER_NEW_PUB_IMAGES_PATH
 import com.example.data.models.Publication
 import com.example.data.publicationservice.PublicationService
 import com.example.data.requests.PublicationRequest
@@ -17,7 +20,6 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.UUID
-import kotlin.random.Random
 
 fun Route.getPublicationRoutes(publicationService: PublicationService) {
     authenticate {
@@ -40,7 +42,7 @@ fun Route.getPublicationRoutes(publicationService: PublicationService) {
                 return@get
             }
 
-            if (category != null && id == null) {
+            if (category != null) {
                 val publications = publicationService.getPublicationsByCategory(category)
                 call.respond(status = HttpStatusCode.OK, message = publications)
                 return@get
@@ -86,38 +88,24 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
             }
             val results = mutableListOf<Boolean>()
 
+            val pathToCardImage = "$HOST/image/$pubId/image_0"
+
             files.forEachIndexed { index, file ->
-//                file.save("build/resources/main/static/images/", file.name)
-                results.add(
-                    publicationService.insertFile(
-                        file = file, fileName = "image_$index.jpeg", category = pubCategory, pubId = pubId
-                    )
+                val fileInserted = publicationService.insertPublicationImage(
+                    file = file,
+                    fileName = "image_$index",
+                    pubId = pubId
                 )
+                if (!fileInserted) {
+                    call.respond(status = HttpStatusCode.Conflict, message = "Failed to insert file to database")
+                    return@post
+                }
+                file.save("$SERVER_NEW_PUB_IMAGES_PATH/$pubId", "/image_$index")
             }
-
-            if (results.contains(false)) {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = "Критическая ошибка при загрузке изображений"
-                )
-                return@post
-            }
-
-            val cardImage = files[0]
-            cardImage.save("/root/studhunter/pubimages/", "$pubId.jpeg")
-
-            val cardImageUrl = publicationService.generateTemporaryImageUrl(
-                category = pubCategory,
-                pubId = pubId,
-                fileName = "image_0"
-            )
-
-            println("Дата:")
-            println(cardImageUrl.expiresIn)
 
             val publication = Publication(
                 id = pubId,
-                imageUrl = cardImageUrl.url ?: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAMAAACahl6sAAAAOVBMVEXg4OB1dXXX19fd3d2EhIR9fX14eHjJycm2trbb29uurq6goKCZmZmIiIiBgYHNzc2np6e8vLySkpKXK8HrAAABuUlEQVR4nO3Z0bKCIBCAYQNFVCzr/R/2nHU6k8KpJi6wZf7vLu1id9gFhKYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAb249h7pzr5jD29uhospnlfNo4L+boiLKYyZ0iblKYiu/iNER3PTquD9npPgbB98Za0/twH59JVasMtzXo1m+iHny7PrwpysSuebgxCtmOTlkma121l/TFZR2UqXxEebxEO/87QZlZ3inpeCPzVftkojUyJp2OWVgKy23qSsbg8evitBSXkUjHzYN9Is0oeWoYkkUKazsxRYlYKa6ldFSfs7K/8tsnUSLrXHAuG1SOXpp5t1LEiQxSe33ZqDJIC4TdkziRJkRN9J1CXFlpIj7J9RvNSd0kiUj1zSVjyiKr4X5yTRIx0kYlY8oinbzfFSaJWFlJSsaUpZpEqimttNkTOpo9nX4TOqbfdEFM6FgQpW7c8OofSrYo1Wwaq9nG1/NhVc2nbj2HD821kuOgeg7o3hyZBj1Hpo9D7M3K+HeIrSmPeq4Vfl3ruOhpnly9vdyEfa1KLkPF7nr66GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPjcD13rCcC3ILx/AAAAAElFTkSuQmCC",
+                imageUrl = pathToCardImage,
                 title = publicationRequest?.title ?: "",
                 description = publicationRequest?.description ?: "",
                 price = publicationRequest?.price ?: "",
@@ -141,10 +129,44 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
     }
 }
 
+fun Route.getUserPubs(publicationService: PublicationService) {
+    authenticate {
+        get("publications/user/{id}") {
+            val userId = call.parameters["id"] ?: kotlin.run {
+                call.respond(status = HttpStatusCode.BadRequest, message = "Invalid link")
+                return@get
+            }
+            val userPubIds = publicationService.getUserPubIds(userId) ?: kotlin.run {
+                call.respond(status = HttpStatusCode.BadRequest, message = "User doesn't have publications or doesn't exist")
+                return@get
+            }
+            val ids = userPubIds.ids
+
+            val publications = ids.mapNotNull {
+                publicationService.getPublicationById(category = it.value, publicationId = it.key)
+            }
+            call.respond(status = HttpStatusCode.OK, message = publications)
+        }
+    }
+}
+
 fun Route.imageRoutes() {
-    get("images/{id}") {
-        val imageId = call.parameters["id"] ?: return@get call.respond(status = HttpStatusCode.BadRequest, message = "Invalid link")
-        val imageFile = File("/root/studhunter/pubimages/$imageId.jpeg")
+    get("image/{id}/{name}") {
+        val publicationId = call.parameters["id"] ?: kotlin.run {
+            call.respond(
+                status = HttpStatusCode.BadRequest,
+                message = "Invalid link"
+            )
+            return@get
+        }
+        val imageName = call.parameters["name"] ?: kotlin.run {
+            call.respond(
+                status = HttpStatusCode.BadRequest,
+                message = "Invalid link"
+            )
+            return@get
+        }
+        val imageFile = File("$SERVER_NEW_PUB_IMAGES_PATH/$publicationId/$imageName.jpeg")
         if (!imageFile.exists()) return@get call.respond(status = HttpStatusCode.NotFound, message = "Image not found")
         call.respondFile(imageFile)
     }

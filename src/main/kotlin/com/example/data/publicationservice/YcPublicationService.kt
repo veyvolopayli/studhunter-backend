@@ -1,21 +1,30 @@
 package com.example.data.publicationservice
 
-import com.amazonaws.HttpMethod
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.*
 import com.example.BUCKET_NAME
+import com.example.data.constants.NEW_PUBS_PATH
+import com.example.data.constants.USERS_DATA_PATH
+import com.example.data.models.PubIds
 import com.example.data.models.Publication
+import com.example.features.getCurrentMills
+import com.example.yandexcloud.YcPaths
 import com.google.gson.Gson
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import java.io.File
-import java.time.Duration
 import java.time.Instant
 import java.util.Date
 
 class YcPublicationService(private val s3: AmazonS3): PublicationService {
+
+    private val ycPaths = YcPaths()
+
     override suspend fun getAllPublications(): List<Publication> {
-        val listObjRequest = ListObjectsV2Request().withBucketName(BUCKET_NAME).withPrefix("publications/pubs")
-        val objSummaries = s3.listObjectsV2(listObjRequest).objectSummaries.filter { it.key.endsWith(".json") }
-        val publications = objSummaries.map { summary ->
+        val listObjRequest = ListObjectsV2Request().withBucketName(BUCKET_NAME).withPrefix(NEW_PUBS_PATH)
+//        val objSummaries = s3.listObjectsV2(listObjRequest).objectSummaries.filter { it.key.endsWith(".json") }
+        val objSummaries = s3.listObjectsV2(listObjRequest).objectSummaries
+        val publications = objSummaries.mapNotNull { summary ->
             val obj = s3.getObject(BUCKET_NAME, summary.key)
             val objContent = obj.objectContent.bufferedReader().use { it.readText() }
             val publication = Gson().fromJson(objContent, Publication::class.java)
@@ -30,8 +39,8 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
     }
 
     override suspend fun getPublicationsByCategory(category: String): List<Publication> {
-        val listObjRequest = ListObjectsV2Request().withBucketName(BUCKET_NAME).withPrefix("publications/$category")
-        val objSummaries = s3.listObjectsV2(listObjRequest).objectSummaries.filter { it.key.endsWith(".json") }
+        val listObjRequest = ListObjectsV2Request().withBucketName(BUCKET_NAME).withPrefix("$NEW_PUBS_PATH/$category")
+        val objSummaries = s3.listObjectsV2(listObjRequest).objectSummaries
         val publications = objSummaries.map { summary ->
             val obj = s3.getObject(BUCKET_NAME, summary.key)
             val objContent = obj.objectContent.bufferedReader().use { it.readText() }
@@ -42,9 +51,8 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
     }
 
     override suspend fun getPublicationById(category: String, publicationId: String): Publication? {
-        val key = "publications/pubs/$category/$publicationId/$publicationId.json"
         return try {
-            val pubObj = s3.getObject(BUCKET_NAME, key)
+            val pubObj = s3.getObject(BUCKET_NAME, ycPaths.newPubPath(category, publicationId))
             val pubContent = pubObj.objectContent.bufferedReader().use { it.readText() }
             Gson().fromJson(pubContent, Publication::class.java)
         } catch (e: AmazonS3Exception) {
@@ -55,12 +63,13 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
 
     override suspend fun insertPublication(publication: Publication): Boolean {
         val pubJson = Gson().toJson(publication)
-        val insertPub = s3.putObject(BUCKET_NAME, "publications/pubs/${publication.category}/${publication.id}/${publication.id}.json", pubJson)
+        val insertPub = s3.putObject(BUCKET_NAME, ycPaths.newPubPath(publication.category ?: "Другое", publication.id), pubJson)
+        addPublicationToUser(userId = publication.userId ?: "0", pubId = publication.id, category = publication.category ?: "Другое")
         return insertPub != null
     }
 
-    override suspend fun insertFile(file: File, fileName: String, category: String, pubId: String): Boolean {
-        val result = s3.putObject(BUCKET_NAME, "publications/images/$category/$pubId/$fileName", file)
+    override suspend fun insertPublicationImage(file: File, fileName: String, pubId: String): Boolean {
+        val result = s3.putObject(BUCKET_NAME, ycPaths.newPubImagePath(pubId, fileName), file)
         return result != null
     }
 
@@ -78,6 +87,36 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
             s3.generatePresignedUrl(BUCKET_NAME, "publications/images/$category/$pubId/$fileName.jpeg", date).toString()
 
         return TemporaryImage(url = temporaryUrl, expiresIn = date)
+    }
+
+    override suspend fun addPublicationToUser(userId: String, pubId: String, category: String): Boolean {
+        var result: PutObjectResult?
+        val path = "$USERS_DATA_PATH/$userId/user_pubs.json"
+        val userPubIds = getUserPubIds(userId) ?: kotlin.run {
+            val newListOfIds = mutableMapOf(pubId to category)
+            val newJson = Gson().toJson(PubIds(newListOfIds))
+            result = s3.putObject(BUCKET_NAME, path, newJson)
+            return result != null
+        }
+
+        userPubIds.ids[pubId] = category
+
+        val updatedJson = Gson().toJson(userPubIds)
+
+        result = s3.putObject(BUCKET_NAME, path, updatedJson)
+
+        return result != null
+    }
+
+    override suspend fun getUserPubIds(userId: String): PubIds? {
+        val obj = try {
+            s3.getObject(BUCKET_NAME, "$USERS_DATA_PATH/$userId/user_pubs.json")
+        } catch (e: Exception) {
+            return null
+        }
+        val jsonString = obj.objectContent.bufferedReader().use { it.readText() }
+
+        return Json.decodeFromString<PubIds>(jsonString)
     }
 
 

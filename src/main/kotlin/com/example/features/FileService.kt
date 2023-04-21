@@ -21,6 +21,6 @@ fun PartData.FileItem.toFile(prefix: String, suffix: String) : File {
 fun File.save(path: String, fileName: String) {
     val folder = File(path)
     folder.mkdirs()
-    val file = File("$path$fileName")
+    val file = File("$path$fileName.jpeg")
     this.copyTo(file)
 }

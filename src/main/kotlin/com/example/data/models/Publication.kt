@@ -1,5 +1,6 @@
 package com.example.data.models
 
+import com.example.features.getDate
 import kotlinx.serialization.Serializable
 import java.util.*
 
@@ -12,7 +13,7 @@ data class Publication(
     val price: String? = null,
     val priceType: String? = null,
     val district: String? = null,
-    val timeStamp: String? = null,
+    val timeStamp: String = getDate(),
     val category: String? = null,
     val userId: String? = null,
     val socials: String? = null
