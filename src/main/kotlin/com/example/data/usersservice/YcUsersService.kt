@@ -79,14 +79,8 @@ class YcUsersService(private val s3: AmazonS3): UsersService {
     }
 
     override suspend fun startReviewsTask() {
-        val timer = Timer()
-        val task = object : TimerTask() {
-            override fun run() {
-                CoroutineScope(Dispatchers.IO).launch { insertCalculatedReviews() }
-            }
-        }
-        val hourInMills = 1000L * 60L * 10L
-        val delay = 0L
-        timer.scheduleAtFixedRate(task, delay, hourInMills)
+        val success = insertCalculatedReviews()
+
+        if (success) println("Reviews successfully updated")
     }
 }

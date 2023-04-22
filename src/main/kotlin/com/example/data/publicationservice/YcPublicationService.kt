@@ -3,11 +3,12 @@ package com.example.data.publicationservice
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.*
 import com.example.BUCKET_NAME
+import com.example.data.constants.ASSEMBLED_P_NAME
 import com.example.data.constants.NEW_PUBS_PATH
+import com.example.data.constants.PUBS_PATH
 import com.example.data.constants.USERS_DATA_PATH
 import com.example.data.models.PubIds
 import com.example.data.models.Publication
-import com.example.features.getCurrentMills
 import com.example.yandexcloud.YcPaths
 import com.google.gson.Gson
 import kotlinx.serialization.decodeFromString
@@ -117,6 +118,33 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
         val jsonString = obj.objectContent.bufferedReader().use { it.readText() }
 
         return Json.decodeFromString<PubIds>(jsonString)
+    }
+
+    override suspend fun startPublicationsTask() {
+        val success = updatePublications()
+
+        if (success) println("Publications successfully updated")
+    }
+
+    override suspend fun insertAssembledPublications(publications: List<Publication>): Boolean {
+        val publicationsJson = Gson().toJson(publications)
+        val result = s3.putObject(BUCKET_NAME, "$PUBS_PATH/$ASSEMBLED_P_NAME", publicationsJson)
+
+        return result != null
+    }
+
+    override suspend fun updatePublications(): Boolean {
+        val publications = getAllPublications()
+
+        return insertAssembledPublications(publications)
+    }
+
+    override suspend fun getAssembledPublications(): String? {
+        val publicationsObj = try {
+            s3.getObject(BUCKET_NAME, "$PUBS_PATH/$ASSEMBLED_P_NAME")
+        } catch (e: Exception) { null }
+
+        return publicationsObj?.objectContent?.bufferedReader().use { it?.readText() }
     }
 
 

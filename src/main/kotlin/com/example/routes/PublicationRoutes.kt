@@ -27,7 +27,7 @@ fun Route.getPublicationRoutes(publicationService: PublicationService) {
             val category = call.parameters["category"]
             val id = call.parameters["id"]
 
-            println("publications/pubs/$category/$id/$id.json")
+//            println("publications/pubs/$category/$id/$id.json")
 
             if (category == null && id == null) {
                 val publications = publicationService.getAllPublications()
@@ -125,6 +125,8 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
             }
 
             call.respond(status = HttpStatusCode.OK, message = PublicationResponse(success = true))
+
+            publicationService.updatePublications()
         }
     }
 }

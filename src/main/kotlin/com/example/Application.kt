@@ -6,6 +6,7 @@ import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.example.data.publicationservice.YcPublicationService
 import com.example.data.usersservice.YcUsersService
+import com.example.features.startServices
 import io.ktor.server.application.*
 import com.example.plugins.*
 import com.example.security.hashing.SHA256HashingService
@@ -67,7 +68,7 @@ fun Application.module() {
 
     runBlocking {
         withContext(Dispatchers.IO) {
-            usersService.startReviewsTask()
+            startServices(usersService, publicationService)
         }
     }
 

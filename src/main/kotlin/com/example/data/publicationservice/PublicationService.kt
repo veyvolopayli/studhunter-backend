@@ -22,4 +22,12 @@ interface PublicationService {
     suspend fun addPublicationToUser(userId: String, pubId: String, category: String): Boolean
 
     suspend fun getUserPubIds(userId: String): PubIds?
+
+    suspend fun startPublicationsTask()
+
+    suspend fun insertAssembledPublications(publications: List<Publication>): Boolean
+
+    suspend fun updatePublications(): Boolean
+
+    suspend fun getAssembledPublications(): String?
 }
