@@ -1,6 +1,7 @@
 val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
+val exposed_version: String by project
 
 plugins {
     kotlin("jvm") version "1.8.10"
@@ -44,8 +45,12 @@ dependencies {
     implementation("org.litote.kmongo:kmongo-coroutine:4.8.0")
     implementation("org.litote.kmongo:kmongo-reactor:4.8.0")
     implementation("commons-codec:commons-codec:1.15")
+    implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
+    implementation("org.postgresql:postgresql:42.5.4")
 
-    sshAntTask("org.apache.ant:ant-jsch:1.10.12")
+    sshAntTask("org.apache.ant:ant-jsch:1.10.13")
 }
 
 tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {

@@ -5,6 +5,7 @@ import com.example.data.requests.SignInRequest
 import com.example.data.requests.SignUpRequest
 import com.example.data.responses.AuthResponse
 import com.example.data.userservice.UserDataSource
+import com.example.postgresdatabase.users.Users
 import com.example.security.hashing.HashingService
 import com.example.security.hashing.SaltedHash
 import com.example.security.token.TokenClaim
@@ -17,7 +18,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.apache.commons.codec.digest.DigestUtils
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 
 fun Route.signUp(
     hashingService: HashingService,
@@ -25,12 +26,45 @@ fun Route.signUp(
 ) {
 
     post("signup") {
+
         val request = call.receiveNullable<SignUpRequest>() ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
 
         val areFieldsBlank = request.username.isBlank() || request.password.isBlank()
+        val isPwTooShort = request.password.length < 6
+        if (areFieldsBlank || isPwTooShort) {
+            call.respond(status = HttpStatusCode.Conflict, message = "Username or password is too short or empty")
+            return@post
+        }
+
+        val user = Users.fetchUser(request.username)
+
+        if (user != null) {
+            call.respond(status = HttpStatusCode.Conflict, message = "User already exists")
+            return@post
+        }
+
+        val saltedHash = hashingService.generateSaltedHash(request.password)
+
+        try {
+            Users.insertUser(
+                User(
+                    username = request.username,
+                    password = saltedHash.hash,
+                    salt = saltedHash.salt,
+                    email = request.email,
+                    fullName = "${request.name} ${request.surname}"
+                )
+            )
+        } catch (e: ExposedSQLException) {
+            call.respond(status = HttpStatusCode.Conflict, message = "User already exists")
+        }
+
+        call.respond(status = HttpStatusCode.OK, message = "Registration success")
+
+        /*val areFieldsBlank = request.username.isBlank() || request.password.isBlank()
         val isPwTooShort = request.password.length < 6
         if (areFieldsBlank || isPwTooShort) {
             call.respond(status = HttpStatusCode.Conflict, message = "Password is too short or empty")
@@ -63,7 +97,7 @@ fun Route.signUp(
             return@post
         }
 
-        call.respond(HttpStatusCode.OK)
+        call.respond(HttpStatusCode.OK)*/
     }
 }
 
@@ -74,7 +108,35 @@ fun Route.signIn(
     tokenConfig: TokenConfig
 ) {
     post("signin") {
+
         val request = call.receiveNullable<SignInRequest>() ?: kotlin.run {
+            call.respond(HttpStatusCode.BadRequest)
+            return@post
+        }
+
+        val user = Users.fetchUser(request.username) ?: kotlin.run {
+            call.respond(status = HttpStatusCode.BadRequest, message = "User does not exist")
+            return@post
+        }
+
+        val isValidPassword = hashingService.verify(
+            value = request.password,
+            saltedHash = SaltedHash(
+                hash = user.password,
+                salt = user.salt
+            )
+        )
+
+        if (!isValidPassword) {
+            call.respond(HttpStatusCode.Conflict, "Incorrect username or password")
+            return@post
+        }
+
+        val token = tokenService.generate(config = tokenConfig, TokenClaim(name = "userId", value = user.id))
+
+        call.respond(status = HttpStatusCode.OK, message = AuthResponse(token = token))
+
+        /*val request = call.receiveNullable<SignInRequest>() ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
@@ -101,7 +163,7 @@ fun Route.signIn(
 
         val token = tokenService.generate(config = tokenConfig, TokenClaim(name = "userId", value = user.id))
 
-        call.respond(status = HttpStatusCode.OK, message = AuthResponse(token = token))
+        call.respond(status = HttpStatusCode.OK, message = AuthResponse(token = token))*/
     }
 }
 

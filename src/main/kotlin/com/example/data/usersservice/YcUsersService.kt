@@ -17,7 +17,7 @@ import java.util.Timer
 import java.util.TimerTask
 
 class YcUsersService(private val s3: AmazonS3): UsersService {
-    override suspend fun insertNewReview(userId: String, review: Float): Boolean {
+    override suspend fun insertNewReview(userId: String, review: Double): Boolean {
         val result: PutObjectResult?
         val path = "$USERS_DATA_PATH/$userId/user_reviews.json"
         val reviews = getUserReviews(userId) ?: kotlin.run {
@@ -36,8 +36,8 @@ class YcUsersService(private val s3: AmazonS3): UsersService {
         return result != null
     }
 
-    override suspend fun calculateReview(userReviews: UserReviews?): Float {
-        val reviews = userReviews?.reviews ?: return 5.0F
+    override suspend fun calculateReview(userReviews: UserReviews?): Double {
+        val reviews = userReviews?.reviews ?: return 5.0
         val count = reviews.count()
         val sum = reviews.sum()
         return sum / count

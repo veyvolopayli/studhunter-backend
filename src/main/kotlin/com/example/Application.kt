@@ -18,6 +18,7 @@ import io.ktor.server.netty.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.jetbrains.exposed.sql.Database
 
 
 const val BUCKET_NAME = "stud-hunter-bucket"
@@ -38,6 +39,9 @@ fun Application.module() {
     val db = KMongo.createClient(
         connectionString = "mongodb+srv://veyvolopayli:$mongoPassword@cluster0.d8tkum5.mongodb.net/$dbName?retryWrites=true&w=majority"
     ).coroutine.getDatabase(dbName)*/
+
+    Database.connect(url = "jdbc:postgresql://5.181.255.253:5432/studhunter", driver = "org.postgresql.Driver",
+        user = System.getenv("POSTGRES_USERNAME"), password = System.getenv("POSTGRES_PASSWORD"))
 
     val awsAccessKey = System.getenv("AWS_ACCESS")
     val awsSecretKey = System.getenv("AWS_SECRET")

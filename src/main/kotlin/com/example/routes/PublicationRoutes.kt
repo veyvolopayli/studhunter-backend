@@ -9,6 +9,7 @@ import com.example.data.requests.PublicationRequest
 import com.example.data.responses.PublicationResponse
 import com.example.features.save
 import com.example.features.toFile
+import com.example.postgresdatabase.publications.Publications
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -21,34 +22,40 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.UUID
 
-fun Route.getPublicationRoutes(publicationService: PublicationService) {
+fun Route.getPublicationRoutes() {
     authenticate {
         get("publications") {
+            val query = call.parameters["query"]
             val category = call.parameters["category"]
             val id = call.parameters["id"]
 
-//            println("publications/pubs/$category/$id/$id.json")
-
-            if (category == null && id == null) {
-                val publications = publicationService.getAllPublications()
-                call.respond(status = HttpStatusCode.OK, message = publications)
-                return@get
-            }
-
-            if (category != null && id != null) {
-                val publication = publicationService.getPublicationById(category = category, publicationId = id)
-                if (publication != null) call.respond(status = HttpStatusCode.OK, message = publication)
-                else call.respond(status = HttpStatusCode.BadRequest, message = "Publication doesn't exist")
+            if (query != null) {
+                val publications = Publications.fetchPublicationsByQuery(query = query)
+                call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
                 return@get
             }
 
             if (category != null) {
-                val publications = publicationService.getPublicationsByCategory(category)
-                call.respond(status = HttpStatusCode.OK, message = publications)
+                val publications = Publications.fetchPublicationsByCategory(searchCategory = category)
+                call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
                 return@get
             }
 
-            call.respond(status = HttpStatusCode.BadRequest, message = "Invalid request")
+            if (id != null) {
+                val publication = Publications.fetchPublication(searchId = id) ?: kotlin.run {
+                    call.respond(status = HttpStatusCode.BadRequest, message = "Publication does not exist")
+                    return@get
+                }
+                call.respond(status = HttpStatusCode.OK, message = publication)
+                return@get
+            }
+
+        }
+
+        get("publications/fetch") {
+            val publications = Publications.fetchAllPublications()
+            call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
+            return@get
         }
     }
 }
@@ -78,15 +85,18 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                 part.dispose
             }
 
+            if (publicationRequest == null) {
+                call.respond(status = HttpStatusCode.BadRequest, message = "Bad request")
+                return@post
+            }
+
             val pubId = UUID.randomUUID().toString()
-            val pubCategory = publicationRequest?.category ?: "Другое"
 
             val files: List<File> = parts.mapIndexedNotNull { index, fileItem ->
                 val fileName = "image_$index"
                 if (fileItem.name == "images") fileItem.toFile(fileName, ".jpeg")
                 else null
             }
-            val results = mutableListOf<Boolean>()
 
             val pathToCardImage = "$HOST/image/$pubId/image_0"
 
@@ -106,15 +116,14 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
             val publication = Publication(
                 id = pubId,
                 imageUrl = pathToCardImage,
-                title = publicationRequest?.title ?: "",
-                description = publicationRequest?.description ?: "",
-                price = publicationRequest?.price ?: "",
-                priceType = publicationRequest?.priceType ?: "",
-                district = publicationRequest?.district ?: "",
-                timeStamp = publicationRequest?.timeStamp ?: "",
-                category = publicationRequest?.category ?: "",
-                userId = publicationRequest?.userId ?: "",
-                socials = publicationRequest?.socials ?: ""
+                title = publicationRequest!!.title,
+                description = publicationRequest!!.description,
+                price = publicationRequest?.price ?: 0,
+                priceType = publicationRequest!!.priceType,
+                district = publicationRequest!!.district,
+                category = publicationRequest!!.category,
+                userId = publicationRequest!!.userId,
+                socials = publicationRequest!!.socials
             )
 
             val publicationUploaded = publicationService.insertPublication(publication)
@@ -124,9 +133,12 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                 return@post
             }
 
+            Publications.insertPublication(publication)
+
             call.respond(status = HttpStatusCode.OK, message = PublicationResponse(success = true))
 
             publicationService.updatePublications()
+
         }
     }
 }

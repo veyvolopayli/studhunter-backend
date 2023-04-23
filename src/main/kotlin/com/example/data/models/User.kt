@@ -9,8 +9,7 @@ data class User(
     val username: String,
     val password: String,
     val salt: String,
-    var rating: Float = 5.0F,
-    val fullName: String,
-    val email: String
-    /*@BsonId val id: ObjectId = ObjectId()*/
+    var rating: Double = 5.0,
+    val fullName: String?,
+    val email: String?
 )
