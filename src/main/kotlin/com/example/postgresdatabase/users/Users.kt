@@ -1,6 +1,7 @@
 package com.example.postgresdatabase.users
 
 import com.example.data.models.User
+import com.example.data.responses.UserResponse
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
@@ -29,16 +30,45 @@ object Users: Table() {
         }
     }
 
-    fun fetchUser(userName: String): User? {
+    fun fetchUser(userName: String): UserResponse? {
+        return try {
+            transaction {
+                val user = Users.select { username.eq(userName) }.single()
+                UserResponse(
+                    id = user[Users.id],
+                    username = user[username],
+                    email = user[email],
+                    fullName = user[fullName]
+                )
+            }
+        } catch (e: Exception) { null }
+    }
+
+    fun fetchUserDetailed(userName: String): User? {
         return try {
             transaction {
                 val user = Users.select { username.eq(userName) }.single()
                 User(
+                    id = user[Users.id],
                     username = user[username],
-                    password = user[password],
                     email = user[email],
                     fullName = user[fullName],
+                    password = user[password],
                     salt = user[salt]
+                )
+            }
+        } catch (e: Exception) { null }
+    }
+
+    fun fetchUserById(userId: String): UserResponse? {
+        return try {
+            transaction {
+                val user = Users.select { Users.id.eq(userId) }.single()
+                UserResponse(
+                    id = user[Users.id],
+                    username = user[username],
+                    email = user[email],
+                    fullName = user[fullName]
                 )
             }
         } catch (e: Exception) { null }

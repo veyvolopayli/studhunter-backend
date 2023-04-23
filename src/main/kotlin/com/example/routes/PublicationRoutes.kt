@@ -9,11 +9,14 @@ import com.example.data.requests.PublicationRequest
 import com.example.data.responses.PublicationResponse
 import com.example.features.save
 import com.example.features.toFile
+import com.example.postgresdatabase.publicationinteractions.PublicationViews
 import com.example.postgresdatabase.publications.Publications
+import com.example.postgresdatabase.users.Users
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -46,6 +49,20 @@ fun Route.getPublicationRoutes() {
                     call.respond(status = HttpStatusCode.BadRequest, message = "Publication does not exist")
                     return@get
                 }
+
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
+                    call.respond(HttpStatusCode.Conflict)
+                    return@get
+                }
+
+                val user = Users.fetchUserById(userId) ?: kotlin.run {
+                    call.respond(HttpStatusCode.Conflict)
+                    return@get
+                }
+
+                PublicationViews.insertView(id, user.username)
+
                 call.respond(status = HttpStatusCode.OK, message = publication)
                 return@get
             }

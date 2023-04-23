@@ -2,6 +2,7 @@ val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val exposed_version: String by project
+val ktorm_version: String by project
 
 plugins {
     kotlin("jvm") version "1.8.10"
@@ -49,6 +50,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
     implementation("org.postgresql:postgresql:42.5.4")
+
+//    implementation("org.ktorm:ktorm-core:$ktorm_version")
+//    implementation("org.ktorm:ktorm-support-postgresql:$ktorm_version")
 
     sshAntTask("org.apache.ant:ant-jsch:1.10.13")
 }

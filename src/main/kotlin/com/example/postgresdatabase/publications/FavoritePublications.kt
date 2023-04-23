@@ -1,6 +1,7 @@
 package com.example.postgresdatabase.publications
 
 import com.example.data.models.Publication
+import com.example.features.getCurrentMills
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.VarCharColumnType
@@ -11,6 +12,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object FavoritePublications : Table() {
     private val userId = varchar("userid", 36)
     private val favorite = varchar("favorite", 36)
+    val s = getCurrentMills()
 
     fun fetchFavorites(uid: String): List<Publication>? {
         return try {

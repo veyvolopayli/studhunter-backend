@@ -114,7 +114,7 @@ fun Route.signIn(
             return@post
         }
 
-        val user = Users.fetchUser(request.username) ?: kotlin.run {
+        val user = Users.fetchUserDetailed(request.username) ?: kotlin.run {
             call.respond(status = HttpStatusCode.BadRequest, message = "User does not exist")
             return@post
         }
