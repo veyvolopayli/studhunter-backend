@@ -14,7 +14,8 @@ object PublicationViews: Table() {
         return try {
             transaction {
                 insertIgnore {
-                    it[hashedPubId] = publicationId.hashed(12)
+//                    it[hashedPubId] = publicationId.hashed(12)
+                    it[hashedPubId] = publicationId.substring(0, 12)
                     it[PublicationViews.username] = username
                 }
                 true
@@ -27,7 +28,8 @@ object PublicationViews: Table() {
     fun fetchViewsCount(publicationId: String): Int? {
         return try {
             transaction {
-                val count = select { hashedPubId.eq(publicationId.hashed(12)) }.count().toInt()
+//                val count = select { hashedPubId.eq(publicationId.hashed(12)) }.count().toInt()
+                val count = select { hashedPubId.eq(publicationId.substring(0, 12)) }.count().toInt()
                 count
             }
         } catch (e: Exception) {

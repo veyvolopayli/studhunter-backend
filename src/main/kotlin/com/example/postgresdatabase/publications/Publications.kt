@@ -45,7 +45,7 @@ object Publications : Table() {
             transaction {
                 val publication = Publications.select { Publications.id.eq(searchId) }.single()
                 Publication(
-                    id = publication[Publications.id],
+                    id = searchId,
                     imageUrl = publication[imageUrl],
                     title = publication[title],
                     description = publication[description],

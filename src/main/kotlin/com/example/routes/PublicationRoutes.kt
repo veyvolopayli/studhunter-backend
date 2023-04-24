@@ -50,6 +50,8 @@ fun Route.getPublicationRoutes() {
                     return@get
                 }
 
+                call.respond(status = HttpStatusCode.OK, message = publication)
+
                 val principal = call.principal<JWTPrincipal>()
                 val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
                     call.respond(HttpStatusCode.Conflict)
@@ -61,9 +63,8 @@ fun Route.getPublicationRoutes() {
                     return@get
                 }
 
-                println(PublicationViews.insertView(id, user.username))
+                PublicationViews.insertView(id, user.username)
 
-                call.respond(status = HttpStatusCode.OK, message = publication)
                 return@get
             }
 
