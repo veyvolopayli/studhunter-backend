@@ -61,7 +61,7 @@ fun Route.getPublicationRoutes() {
                     return@get
                 }
 
-                PublicationViews.insertView(id, user.username)
+                println(PublicationViews.insertView(id, user.username))
 
                 call.respond(status = HttpStatusCode.OK, message = publication)
                 return@get

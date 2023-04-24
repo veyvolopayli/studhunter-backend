@@ -1,18 +1,19 @@
 package com.example.postgresdatabase.publicationinteractions
 
 import com.example.features.hashed
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.postgresql.util.PSQLException
 
 object PublicationViews: Table() {
-    private val hashedPubId = varchar("hashedPubId", 12)
+    private val hashedPubId = varchar("publicationid", 12)
     private val username = varchar("username", 20)
 
     fun insertView(publicationId: String, username: String): Boolean {
         return try {
-            if (fetchAllViews()?.contains(publicationId.hashed(12) to username) ?: return false) return false
             transaction {
-                insert {
+                insertIgnore {
                     it[hashedPubId] = publicationId.hashed(12)
                     it[PublicationViews.username] = username
                 }

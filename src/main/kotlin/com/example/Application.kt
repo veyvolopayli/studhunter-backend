@@ -34,12 +34,6 @@ fun main() {
 
 fun Application.module() {
 
-    /*val mongoPassword = System.getenv("MONGO_PW")
-    val dbName = "seefood"
-    val db = KMongo.createClient(
-        connectionString = "mongodb+srv://veyvolopayli:$mongoPassword@cluster0.d8tkum5.mongodb.net/$dbName?retryWrites=true&w=majority"
-    ).coroutine.getDatabase(dbName)*/
-
     Database.connect(url = "jdbc:postgresql://5.181.255.253:5432/studhunter", driver = "org.postgresql.Driver",
         user = System.getenv("POSTGRES_USERNAME"), password = System.getenv("POSTGRES_PASSWORD"))
 
@@ -53,7 +47,6 @@ fun Application.module() {
             )
         ).build()
 
-//    val userDataSource = MongoUserDataSource(db)
     val userDataSource = YcUserDataSource(s3)
 
     val tokenService = JwtTokenService()
@@ -70,11 +63,11 @@ fun Application.module() {
 
     val usersService = YcUsersService(s3)
 
-    runBlocking {
+    /*runBlocking {
         withContext(Dispatchers.IO) {
             startServices(usersService, publicationService)
         }
-    }
+    }*/
 
 
     configureSockets()
