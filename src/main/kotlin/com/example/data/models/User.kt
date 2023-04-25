@@ -11,5 +11,6 @@ data class User(
     val salt: String,
     var rating: Double = 5.0,
     val fullName: String?,
-    val email: String?
+    val email: String?,
+    val university: String?
 )

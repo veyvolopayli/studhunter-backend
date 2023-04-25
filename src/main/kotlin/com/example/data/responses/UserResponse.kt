@@ -7,7 +7,8 @@ import java.util.*
 data class UserResponse(
     val id: String,
     val username: String,
-    var rating: Double = 5.0,
+    var rating: Double,
     val fullName: String?,
-    val email: String?
+    val email: String?,
+    val university: String?
 )

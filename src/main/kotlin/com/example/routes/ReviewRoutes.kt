@@ -1,6 +1,7 @@
 package com.example.routes
 
 import com.example.data.models.Review
+import com.example.data.models.User
 import com.example.data.requests.InsertReviewRequest
 import com.example.postgresdatabase.reviews.Reviews
 import com.example.postgresdatabase.users.Users
@@ -46,6 +47,8 @@ fun Route.insertReviews() {
                 call.respond(status = HttpStatusCode.Conflict, "Failed to insert new review")
                 return@post
             }
+
+            Users.updateRating(userId)
 
             call.respond(status = HttpStatusCode.OK, message = newReviewId)
         }

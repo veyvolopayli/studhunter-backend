@@ -2,10 +2,13 @@ package com.example.postgresdatabase.users
 
 import com.example.data.models.User
 import com.example.data.responses.UserResponse
+import com.example.postgresdatabase.reviews.Reviews
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 
 object Users: Table() {
     private val id = Users.varchar("id", 36)
@@ -15,6 +18,7 @@ object Users: Table() {
     private val rating = Users.double("rating")
     private val fullName = Users.varchar("fullname", 25).nullable()
     private val email = Users.varchar("email", 50).nullable()
+    private val university = Users.varchar("university", 30).nullable()
 
     fun insertUser(user: User) {
         transaction {
@@ -26,6 +30,7 @@ object Users: Table() {
                 it[rating] = user.rating
                 it[fullName] = user.fullName
                 it[email] = user.email
+                it[university] = user.university
             }
         }
     }
@@ -38,7 +43,9 @@ object Users: Table() {
                     id = user[Users.id],
                     username = user[username],
                     email = user[email],
-                    fullName = user[fullName]
+                    fullName = user[fullName],
+                    university = user[university],
+                    rating = user[rating]
                 )
             }
         } catch (e: Exception) { null }
@@ -54,7 +61,8 @@ object Users: Table() {
                     email = user[email],
                     fullName = user[fullName],
                     password = user[password],
-                    salt = user[salt]
+                    salt = user[salt],
+                    university = user[university]
                 )
             }
         } catch (e: Exception) { null }
@@ -68,9 +76,29 @@ object Users: Table() {
                     id = user[Users.id],
                     username = user[username],
                     email = user[email],
-                    fullName = user[fullName]
+                    fullName = user[fullName],
+                    university = user[university],
+                    rating = user[rating]
                 )
             }
         } catch (e: Exception) { null }
+    }
+
+    fun updateRating(userId: String): Boolean? {
+        val reviews = Reviews.fetchUserReviews(userId).map { it.review }
+        if (reviews.isNotEmpty()) {
+            return try {
+                transaction {
+                    val newRating = reviews.sum() / reviews.count()
+                    update({ Users.id eq userId }) {
+                        it[rating] = newRating
+                    }
+                }
+                true
+            } catch (e: Exception) {
+                null
+            }
+        }
+        return true
     }
 }

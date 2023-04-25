@@ -55,7 +55,8 @@ fun Route.signUp(
                     password = saltedHash.hash,
                     salt = saltedHash.salt,
                     email = request.email,
-                    fullName = "${request.name} ${request.surname}"
+                    fullName = if (request.name == null || request.surname == null) null else "${request.name} ${request.surname}",
+                    university = request.university
                 )
             )
         } catch (e: ExposedSQLException) {
