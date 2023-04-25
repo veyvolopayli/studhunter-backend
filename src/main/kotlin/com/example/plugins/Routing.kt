@@ -1,5 +1,6 @@
 package com.example.plugins
 
+import com.amazonaws.services.s3.AmazonS3
 import com.example.data.publicationservice.PublicationService
 import com.example.data.userservice.UserDataSource
 import com.example.data.usersservice.UsersService
@@ -18,7 +19,8 @@ fun Application.configureRouting(
     tokenService: TokenService,
     tokenConfig: TokenConfig,
     publicationService: PublicationService,
-    usersService: UsersService
+    usersService: UsersService,
+    s3: AmazonS3
 ) {
     routing {
         signIn(userDataSource, hashingService, tokenService, tokenConfig)
@@ -27,7 +29,7 @@ fun Application.configureRouting(
         getSecretInfo()
         getPublicationRoutes()
         postPublicationRoutes(publicationService)
-        imageRoutes()
+        imageRoutes(s3)
         getUserId()
         getUserPubs(publicationService)
         insertNewRating(usersService)

@@ -1,5 +1,7 @@
 package com.example.routes
 
+import com.amazonaws.services.s3.AmazonS3
+import com.example.BUCKET_NAME
 import com.example.data.constants.HOST
 import com.example.data.constants.NEW_PUB_IMAGES_PATH
 import com.example.data.constants.SERVER_NEW_PUB_IMAGES_PATH
@@ -7,6 +9,7 @@ import com.example.data.models.Publication
 import com.example.data.publicationservice.PublicationService
 import com.example.data.requests.PublicationRequest
 import com.example.data.responses.PublicationResponse
+import com.example.features.compressImage
 import com.example.features.save
 import com.example.features.toFile
 import com.example.postgresdatabase.publicationinteractions.PublicationViews
@@ -23,7 +26,9 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.io.OutputStream
 import java.util.UUID
+import kotlin.io.path.outputStream
 
 fun Route.getPublicationRoutes() {
     authenticate {
@@ -119,16 +124,18 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
             val pathToCardImage = "$HOST/image/$pubId/image_0"
 
             files.forEachIndexed { index, file ->
+
                 val fileInserted = publicationService.insertPublicationImage(
                     file = file,
                     fileName = "image_$index",
                     pubId = pubId
                 )
+
                 if (!fileInserted) {
                     call.respond(status = HttpStatusCode.Conflict, message = "Failed to insert file to database")
                     return@post
                 }
-                file.save("$SERVER_NEW_PUB_IMAGES_PATH/$pubId", "/image_$index")
+//                file.save("$SERVER_NEW_PUB_IMAGES_PATH/$pubId", "/image_$index")
             }
 
             val publication = Publication(
@@ -182,8 +189,9 @@ fun Route.getUserPubs(publicationService: PublicationService) {
     }
 }
 
-fun Route.imageRoutes() {
+fun Route.imageRoutes(s3: AmazonS3) {
     get("image/{id}/{name}") {
+
         val publicationId = call.parameters["id"] ?: kotlin.run {
             call.respond(
                 status = HttpStatusCode.BadRequest,
@@ -191,6 +199,7 @@ fun Route.imageRoutes() {
             )
             return@get
         }
+
         val imageName = call.parameters["name"] ?: kotlin.run {
             call.respond(
                 status = HttpStatusCode.BadRequest,
@@ -198,8 +207,18 @@ fun Route.imageRoutes() {
             )
             return@get
         }
-        val imageFile = File("$SERVER_NEW_PUB_IMAGES_PATH/$publicationId/$imageName.jpeg")
-        if (!imageFile.exists()) return@get call.respond(status = HttpStatusCode.NotFound, message = "Image not found")
-        call.respondFile(imageFile)
+
+        val s3Object = s3.getObject(BUCKET_NAME, "publications/images/new/$publicationId/$imageName.jpeg") ?: kotlin.run {
+            call.respond(
+                status = HttpStatusCode.BadRequest,
+                message = "Image not found"
+            )
+            return@get
+        }
+
+        val inputStream = s3Object.objectContent
+        val bytes = inputStream.readBytes()
+
+        call.respondBytes(bytes, ContentType.Image.JPEG)
     }
 }
