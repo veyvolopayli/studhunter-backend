@@ -150,7 +150,7 @@ object Publications : Table() {
     fun fetchPublicationsByUserId(searchUserId: String): List<Publication>? {
         return try {
             transaction {
-                val publications = Publications.select { Publications.id.eq(searchUserId) }.toList().map { row ->
+                val publications = Publications.select { userId.eq(searchUserId) }.toList().map { row ->
                     Publication(
                         id = row[Publications.id],
                         imageUrl = row[imageUrl],

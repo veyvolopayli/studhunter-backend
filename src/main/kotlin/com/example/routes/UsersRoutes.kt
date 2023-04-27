@@ -1,6 +1,7 @@
 package com.example.routes
 
 import com.example.data.usersservice.UsersService
+import com.example.postgresdatabase.publications.Publications
 import com.example.postgresdatabase.users.Users
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -45,6 +46,20 @@ fun Route.insertNewRating(usersService: UsersService) {
             }
 
             call.respond(status = HttpStatusCode.OK, message = user)
+        }
+
+        get("users/publications/{id}") {
+            val userId = call.parameters["id"] ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+
+            val publications = Publications.fetchPublicationsByUserId(searchUserId = userId) ?: kotlin.run {
+                call.respond(status = HttpStatusCode.BadRequest, message = "User not found")
+                return@get
+            }
+
+            call.respond(status = HttpStatusCode.OK, message = publications)
         }
     }
 }

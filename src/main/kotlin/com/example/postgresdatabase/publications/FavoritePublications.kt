@@ -15,7 +15,7 @@ object FavoritePublications : Table() {
         return try {
             transaction {
                 val favorites = select { userId.eq(uid) }.toList().map { row ->
-                    row[userId]
+                    row[favoritePubId]
                 }
                 val publications = favorites.mapNotNull { Publications.fetchPublication(searchId = it) }
                 publications
@@ -34,7 +34,7 @@ object FavoritePublications : Table() {
     fun insertFavorite(uid: String, publicationId: String): Boolean? {
         return try {
             transaction {
-                insert {
+                insertIgnore {
                     it[userId] = uid
                     it[favoritePubId] = publicationId
                 }

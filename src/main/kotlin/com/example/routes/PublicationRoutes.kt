@@ -86,11 +86,8 @@ fun Route.getPublicationRoutes() {
         }
 
         get("publications/favorites/fetch") {
-            val principal = call.principal<JWTPrincipal>() ?: kotlin.run {
-                call.respond(HttpStatusCode.Unauthorized)
-                return@get
-            }
-            val userId = principal.getClaim("userId", String::class) ?: kotlin.run {
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
                 call.respond(HttpStatusCode.Conflict)
                 return@get
             }
