@@ -3,16 +3,14 @@ package com.example.routes
 import com.amazonaws.services.s3.AmazonS3
 import com.example.BUCKET_NAME
 import com.example.data.constants.HOST
-import com.example.data.constants.NEW_PUB_IMAGES_PATH
-import com.example.data.constants.SERVER_NEW_PUB_IMAGES_PATH
 import com.example.data.models.Publication
 import com.example.data.publicationservice.PublicationService
+import com.example.data.requests.FavoritePubRequest
 import com.example.data.requests.PublicationRequest
 import com.example.data.responses.PublicationResponse
-import com.example.features.compressImage
-import com.example.features.save
 import com.example.features.toFile
 import com.example.postgresdatabase.publicationinteractions.PublicationViews
+import com.example.postgresdatabase.publications.FavoritePublications
 import com.example.postgresdatabase.publications.Publications
 import com.example.postgresdatabase.users.Users
 import io.ktor.http.*
@@ -26,9 +24,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.io.OutputStream
 import java.util.UUID
-import kotlin.io.path.outputStream
 
 fun Route.getPublicationRoutes() {
     authenticate {
@@ -79,6 +75,41 @@ fun Route.getPublicationRoutes() {
             val publications = Publications.fetchAllPublications()
             call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
             return@get
+        }
+
+        get("publications/favorites/fetch") {
+            val principal = call.principal<JWTPrincipal>() ?: kotlin.run {
+                call.respond(HttpStatusCode.Unauthorized)
+                return@get
+            }
+            val userId = principal.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@get
+            }
+
+            val favorites = FavoritePublications.fetchFavorites(userId)
+
+            call.respond(status = HttpStatusCode.OK, message = favorites)
+        }
+
+        get("publications/views/{id}") {
+            val publicationId = call.parameters["id"] ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            val viewCount = PublicationViews.fetchViewCount(publicationId)
+
+            call.respond(status = HttpStatusCode.OK, message = viewCount)
+        }
+
+        get("publications/favorites/count/{id}") {
+            val publicationId = call.parameters["id"] ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            val count = FavoritePublications.fetchPubInFavoritesCount(publicationId)
+
+            call.respond(status = HttpStatusCode.OK, message = count)
         }
     }
 }
@@ -164,6 +195,62 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
 
             publicationService.updatePublications()
 
+        }
+
+        post("publications/favorites/add") {
+            val request = call.receiveNullable<FavoritePubRequest>() ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@post
+            }
+
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            FavoritePublications.insertFavorite(userId, request.publicationId) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            call.respond(HttpStatusCode.OK)
+        }
+
+        post("publications/favorites/remove-single") {
+            val request = call.receiveNullable<FavoritePubRequest>() ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@post
+            }
+
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            FavoritePublications.removeFavorite(userId, request.publicationId) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            call.respond(HttpStatusCode.OK)
+        }
+
+        post("publications/favorites/remove-all") {
+
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            FavoritePublications.removeAllUserFavorites(userId) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            call.respond(HttpStatusCode.OK)
         }
     }
 }

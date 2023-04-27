@@ -10,9 +10,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object FavoritePublications : Table() {
     private val userId = varchar("userid", 36)
     private val favoritePubId = varchar("fav_pubid", 36)
-    val s = getCurrentMills()
 
-    fun fetchFavorites(uid: String): List<Publication>? {
+    fun fetchFavorites(uid: String): List<Publication> {
         return try {
             transaction {
                 val favorites = select { userId.eq(uid) }.toList().map { row ->
@@ -22,11 +21,17 @@ object FavoritePublications : Table() {
                 publications
             }
         } catch (e: Exception) {
-            null
+            emptyList()
         }
     }
 
-    fun insertFavorite(uid: String, publicationId: String): Boolean {
+    fun fetchPubInFavoritesCount(publicationId: String): Int {
+        return try {
+            transaction { select { favoritePubId.eq(publicationId) }.count().toInt() }
+        } catch (e: Exception) { 0 }
+    }
+
+    fun insertFavorite(uid: String, publicationId: String): Boolean? {
         return try {
             transaction {
                 insert {
@@ -36,29 +41,29 @@ object FavoritePublications : Table() {
             }
             true
         } catch (e: ExposedSQLException) {
-            false
+            null
         }
     }
 
-    fun removeFavorite(uid: String, publicationId: String): Boolean {
+    fun removeFavorite(uid: String, publicationId: String): Boolean? {
         return try {
             transaction {
                 deleteWhere { userId.eq(uid) and favoritePubId.eq(publicationId) }
             }
             true
         } catch (e: ExposedSQLException) {
-            false
+            null
         }
     }
 
-    fun removeAllUserFavorites(uid: String): Boolean {
+    fun removeAllUserFavorites(uid: String): Boolean? {
         return try {
             transaction {
                 deleteWhere { userId.eq(uid) }
             }
             true
         } catch (e: ExposedSQLException) {
-            false
+            null
         }
     }
 
