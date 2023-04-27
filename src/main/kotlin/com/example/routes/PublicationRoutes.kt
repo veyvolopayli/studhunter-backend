@@ -2,17 +2,21 @@ package com.example.routes
 
 import com.amazonaws.services.s3.AmazonS3
 import com.example.BUCKET_NAME
+import com.example.data.constants.Constants
 import com.example.data.constants.HOST
 import com.example.data.constants.NEW_PUB_IMAGES_PATH
 import com.example.data.constants.SERVER_NEW_PUB_IMAGES_PATH
 import com.example.data.models.Publication
 import com.example.data.publicationservice.PublicationService
+import com.example.data.requests.ApprovePublicationRequest
+import com.example.data.requests.FavoritePubRequest
 import com.example.data.requests.PublicationRequest
 import com.example.data.responses.PublicationResponse
 import com.example.features.compressImage
 import com.example.features.save
 import com.example.features.toFile
 import com.example.postgresdatabase.publicationinteractions.PublicationViews
+import com.example.postgresdatabase.publications.FavoritePublications
 import com.example.postgresdatabase.publications.Publications
 import com.example.postgresdatabase.users.Users
 import io.ktor.http.*
@@ -80,6 +84,41 @@ fun Route.getPublicationRoutes() {
             call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
             return@get
         }
+
+        get("publications/favorites/fetch") {
+            val principal = call.principal<JWTPrincipal>() ?: kotlin.run {
+                call.respond(HttpStatusCode.Unauthorized)
+                return@get
+            }
+            val userId = principal.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@get
+            }
+
+            val favorites = FavoritePublications.fetchFavorites(userId)
+
+            call.respond(status = HttpStatusCode.OK, message = favorites)
+        }
+
+        get("publications/views/{id}") {
+            val publicationId = call.parameters["id"] ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            val viewCount = PublicationViews.fetchViewCount(publicationId)
+
+            call.respond(status = HttpStatusCode.OK, message = viewCount)
+        }
+
+        get("publications/favorites/count/{id}") {
+            val publicationId = call.parameters["id"] ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            val count = FavoritePublications.fetchPubInFavoritesCount(publicationId)
+
+            call.respond(status = HttpStatusCode.OK, message = count)
+        }
     }
 }
 
@@ -143,26 +182,126 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                 imageUrl = pathToCardImage,
                 title = publicationRequest!!.title,
                 description = publicationRequest!!.description,
-                price = publicationRequest?.price ?: 0,
+                price = publicationRequest!!.price,
                 priceType = publicationRequest!!.priceType,
-                district = publicationRequest!!.district,
+                district = publicationRequest?.district,
                 category = publicationRequest!!.category,
                 userId = publicationRequest!!.userId,
                 socials = publicationRequest!!.socials
             )
 
-            val publicationUploaded = publicationService.insertPublication(publication)
+            /*val publicationUploaded = publicationService.insertPublication(publication)
 
             if (!publicationUploaded) {
                 call.respond(status = HttpStatusCode.BadRequest, message = PublicationResponse(success = false))
                 return@post
-            }
+            }*/
 
             Publications.insertPublication(publication)
 
             call.respond(status = HttpStatusCode.OK, message = PublicationResponse(success = true))
 
-            publicationService.updatePublications()
+//            publicationService.updatePublications()
+
+        }
+
+        post("publications/favorites/add") {
+            val request = call.receiveNullable<FavoritePubRequest>() ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@post
+            }
+
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            FavoritePublications.insertFavorite(userId, request.publicationId) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            call.respond(HttpStatusCode.OK)
+        }
+
+        post("publications/favorites/remove-single") {
+            val request = call.receiveNullable<FavoritePubRequest>() ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@post
+            }
+
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            FavoritePublications.removeFavorite(userId, request.publicationId) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            call.respond(HttpStatusCode.OK)
+        }
+
+        post("publications/favorites/remove-all") {
+
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            FavoritePublications.removeAllUserFavorites(userId) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            call.respond(HttpStatusCode.OK)
+        }
+    }
+}
+
+fun Route.publicationOperationRoutes() {
+    authenticate {
+        post("publications/moderate") {
+            val request = call.receiveNullable<ApprovePublicationRequest>() ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@post
+            }
+
+//            val token = call.request.headers["Authorization"]
+
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Unauthorized)
+                return@post
+            }
+
+            val username = Users.fetchUserById(userId)?.username  ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@post
+            }
+
+            val isAdmin = username == "admin"
+
+            println(username)
+
+            if (!isAdmin) {
+                call.respond(status = HttpStatusCode.Conflict, message = "You can't do that")
+                return@post
+            }
+
+            val pubId = request.publicationId
+            val approved = request.approved
+
+            Publications.updatePublicationStatus(pubId, approved) ?: kotlin.run {
+                call.respond(status = HttpStatusCode.InternalServerError, "Error")
+                return@post
+            }
+
+            call.respond(status = HttpStatusCode.OK, message = "Success\nApproved: ${ request.approved }")
 
         }
     }
@@ -176,7 +315,10 @@ fun Route.getUserPubs(publicationService: PublicationService) {
                 return@get
             }
             val userPubIds = publicationService.getUserPubIds(userId) ?: kotlin.run {
-                call.respond(status = HttpStatusCode.BadRequest, message = "User doesn't have publications or doesn't exist")
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "User doesn't have publications or doesn't exist"
+                )
                 return@get
             }
             val ids = userPubIds.ids
@@ -208,13 +350,14 @@ fun Route.imageRoutes(s3: AmazonS3) {
             return@get
         }
 
-        val s3Object = s3.getObject(BUCKET_NAME, "publications/images/new/$publicationId/$imageName.jpeg") ?: kotlin.run {
-            call.respond(
-                status = HttpStatusCode.BadRequest,
-                message = "Image not found"
-            )
-            return@get
-        }
+        val s3Object =
+            s3.getObject(BUCKET_NAME, "${Constants.PUB_IMAGES}/$publicationId/$imageName.jpeg") ?: kotlin.run {
+                call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "Image not found"
+                )
+                return@get
+            }
 
         val inputStream = s3Object.objectContent
         val bytes = inputStream.readBytes()

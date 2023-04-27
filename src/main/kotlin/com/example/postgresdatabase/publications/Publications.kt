@@ -2,10 +2,7 @@ package com.example.postgresdatabase.publications
 
 import com.example.data.models.Publication
 import com.example.postgresdatabase.users.Users.nullable
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Publications : Table() {
@@ -13,13 +10,14 @@ object Publications : Table() {
     private val imageUrl = Publications.varchar("imageurl", 100)
     private val title = Publications.varchar("title", 50)
     private val description = Publications.varchar("description", 1500)
-    private val price = Publications.integer("price").nullable()
-    private val priceType = Publications.varchar("pricetype", 20)
-    private val district = Publications.varchar("district", 15)
+    private val price = Publications.integer("price")
+    private val priceType = Publications.integer("pricetype")
+    private val district = Publications.varchar("district", 15).nullable()
     private val timestamp = Publications.varchar("timestamp", 30)
     private val category = Publications.varchar("category", 50)
     private val userId = Publications.varchar("userid", 36)
     private val socials = Publications.varchar("socials", 20)
+    private val approved = Publications.bool("approved").nullable()
 
     fun insertPublication(publication: Publication): String {
         transaction {
@@ -35,6 +33,7 @@ object Publications : Table() {
                 it[category] = publication.category
                 it[userId] = publication.userId
                 it[socials] = publication.socials
+                it[approved] = publication.approved
             }
         }
         return publication.id
@@ -55,7 +54,8 @@ object Publications : Table() {
                     timestamp = publication[timestamp],
                     category = publication[category],
                     userId = publication[userId],
-                    socials = publication[socials]
+                    socials = publication[socials],
+                    approved = publication[approved]
                 )
             }
         } catch (e: Exception) {
@@ -78,7 +78,8 @@ object Publications : Table() {
                         timestamp = row[timestamp],
                         category = row[category],
                         userId = row[userId],
-                        socials = row[socials]
+                        socials = row[socials],
+                        approved = row[approved]
                     )
                 }
                 publications
@@ -103,7 +104,8 @@ object Publications : Table() {
                         timestamp = row[timestamp],
                         category = row[category],
                         userId = row[userId],
-                        socials = row[socials]
+                        socials = row[socials],
+                        approved = row[approved]
                     )
                 }
                 publications
@@ -116,7 +118,7 @@ object Publications : Table() {
     fun fetchPublicationsByDistrict(searchDistrict: String): List<Publication>? {
         return try {
             transaction {
-                val publications = Publications.select { category.eq(searchDistrict) }.toList().map { row ->
+                val publications = Publications.select { district.eq(searchDistrict) }.toList().map { row ->
                     Publication(
                         id = row[Publications.id],
                         imageUrl = row[imageUrl],
@@ -128,7 +130,8 @@ object Publications : Table() {
                         timestamp = row[timestamp],
                         category = row[category],
                         userId = row[userId],
-                        socials = row[socials]
+                        socials = row[socials],
+                        approved = row[approved]
                     )
                 }
                 publications
@@ -159,7 +162,8 @@ object Publications : Table() {
                         timestamp = row[timestamp],
                         category = row[category],
                         userId = row[userId],
-                        socials = row[socials]
+                        socials = row[socials],
+                        approved = row[approved]
                     )
                 }
                 publications
@@ -167,6 +171,17 @@ object Publications : Table() {
         } catch (e: Exception) {
             null
         }
+    }
+
+    fun updatePublicationStatus(pubId: String, approve: Boolean): Boolean? {
+        return try {
+            transaction {
+                Publications.update ({ Publications.id.eq(pubId) }) {
+                    it[approved] = approve
+                }
+            }
+            return approve
+        } catch (e: Exception) { null }
     }
 
 }
