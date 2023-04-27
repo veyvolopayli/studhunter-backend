@@ -9,12 +9,11 @@ data class Publication(
     val imageUrl: String,
     val title: String,
     val description: String,
-    val price: Int,
-    val priceType: Int,
+    val price: Int?,
+    val priceType: String,
     val district: String,
     val timestamp: String = getDate(),
     val category: String,
     val userId: String,
-    val socials: String,
-    val approved: Boolean? = null
+    val socials: String
 )

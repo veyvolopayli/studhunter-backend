@@ -1,10 +1,7 @@
 package com.example.postgresdatabase.publicationinteractions
 
-import com.example.features.hashed
-import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.postgresql.util.PSQLException
 
 object PublicationViews: Table() {
     private val hashedPubId = varchar("publicationid", 12)
@@ -25,16 +22,14 @@ object PublicationViews: Table() {
         }
     }
 
-    fun fetchViewsCount(publicationId: String): Int? {
+    fun fetchViewCount(publicationId: String): Int {
         return try {
             transaction {
 //                val count = select { hashedPubId.eq(publicationId.hashed(12)) }.count().toInt()
                 val count = select { hashedPubId.eq(publicationId.substring(0, 12)) }.count().toInt()
                 count
             }
-        } catch (e: Exception) {
-            null
-        }
+        } catch (e: Exception) { 0 }
     }
 
     private fun fetchAllViews(): List<Pair<String, String>>? {

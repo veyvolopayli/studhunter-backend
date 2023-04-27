@@ -2,13 +2,15 @@ package com.example.routes
 
 import com.amazonaws.services.s3.AmazonS3
 import com.example.BUCKET_NAME
-import com.example.data.constants.Constants
 import com.example.data.constants.HOST
+import com.example.data.constants.NEW_PUB_IMAGES_PATH
+import com.example.data.constants.SERVER_NEW_PUB_IMAGES_PATH
 import com.example.data.models.Publication
 import com.example.data.publicationservice.PublicationService
-import com.example.data.requests.ApprovePublicationRequest
 import com.example.data.requests.PublicationRequest
 import com.example.data.responses.PublicationResponse
+import com.example.features.compressImage
+import com.example.features.save
 import com.example.features.toFile
 import com.example.postgresdatabase.publicationinteractions.PublicationViews
 import com.example.postgresdatabase.publications.Publications
@@ -24,7 +26,9 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.io.OutputStream
 import java.util.UUID
+import kotlin.io.path.outputStream
 
 fun Route.getPublicationRoutes() {
     authenticate {
@@ -147,12 +151,12 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                 socials = publicationRequest!!.socials
             )
 
-            /*val publicationUploaded = publicationService.insertPublication(publication)
+            val publicationUploaded = publicationService.insertPublication(publication)
 
             if (!publicationUploaded) {
                 call.respond(status = HttpStatusCode.BadRequest, message = PublicationResponse(success = false))
                 return@post
-            }*/
+            }
 
             Publications.insertPublication(publication)
 
@@ -185,50 +189,6 @@ fun Route.getUserPubs(publicationService: PublicationService) {
     }
 }
 
-fun Route.publicationOperationRoutes() {
-    authenticate {
-        post("publications/moderate") {
-            val request = call.receiveNullable<ApprovePublicationRequest>() ?: kotlin.run {
-                call.respond(HttpStatusCode.BadRequest)
-                return@post
-            }
-
-//            val token = call.request.headers["Authorization"]
-
-            val principal = call.principal<JWTPrincipal>()
-            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
-                call.respond(HttpStatusCode.Unauthorized)
-                return@post
-            }
-
-            val username = Users.fetchUserById(userId)?.username  ?: kotlin.run {
-                call.respond(HttpStatusCode.Conflict)
-                return@post
-            }
-
-            val isAdmin = username == "admin"
-
-            println(username)
-
-            if (!isAdmin) {
-                call.respond(status = HttpStatusCode.Conflict, message = "You can't do that")
-                return@post
-            }
-
-            val pubId = request.publicationId
-            val approved = request.approved
-
-            Publications.updatePublicationStatus(pubId, approved) ?: kotlin.run {
-                call.respond(status = HttpStatusCode.InternalServerError, "Error")
-                return@post
-            }
-
-            call.respond(status = HttpStatusCode.OK, message = "Success\nApproved: ${ request.approved }")
-
-        }
-    }
-}
-
 fun Route.imageRoutes(s3: AmazonS3) {
     get("image/{id}/{name}") {
 
@@ -248,7 +208,7 @@ fun Route.imageRoutes(s3: AmazonS3) {
             return@get
         }
 
-        val s3Object = s3.getObject(BUCKET_NAME, "${Constants.PUB_IMAGES}/$publicationId/$imageName.jpeg") ?: kotlin.run {
+        val s3Object = s3.getObject(BUCKET_NAME, "publications/images/new/$publicationId/$imageName.jpeg") ?: kotlin.run {
             call.respond(
                 status = HttpStatusCode.BadRequest,
                 message = "Image not found"
