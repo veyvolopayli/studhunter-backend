@@ -35,6 +35,7 @@ fun Application.configureRouting(
         insertNewRating(usersService)
         fetchReviews()
         insertReviews()
+        publicationOperationRoutes()
 
         get("/") {
             call.respond(message = "посоветуйте ониме аниме новичку\nтвое имя\nантон\nа?\nче звал сларк", status = HttpStatusCode.OK)

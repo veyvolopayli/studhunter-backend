@@ -3,10 +3,7 @@ package com.example.data.publicationservice
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.*
 import com.example.BUCKET_NAME
-import com.example.data.constants.ASSEMBLED_P_NAME
-import com.example.data.constants.NEW_PUBS_PATH
-import com.example.data.constants.PUBS_PATH
-import com.example.data.constants.USERS_DATA_PATH
+import com.example.data.constants.*
 import com.example.data.models.PubIds
 import com.example.data.models.Publication
 import com.example.yandexcloud.YcPaths
@@ -70,7 +67,7 @@ class YcPublicationService(private val s3: AmazonS3): PublicationService {
     }
 
     override suspend fun insertPublicationImage(file: File, fileName: String, pubId: String): Boolean {
-        val result = s3.putObject(BUCKET_NAME, ycPaths.newPubImagePath(pubId, fileName), file)
+        val result = s3.putObject(BUCKET_NAME, "${Constants.PUB_IMAGES}/$pubId/$fileName.jpeg", file)
         return result != null
     }
 

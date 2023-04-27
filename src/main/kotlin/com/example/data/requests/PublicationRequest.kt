@@ -7,7 +7,7 @@ data class PublicationRequest(
     val title: String,
     val description: String,
     val price: Int?,
-    val priceType: String,
+    val priceType: Int,
     val district: String,
     val category: String,
     val userId: String,

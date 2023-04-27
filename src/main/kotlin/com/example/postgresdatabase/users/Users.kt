@@ -3,6 +3,9 @@ package com.example.postgresdatabase.users
 import com.example.data.models.User
 import com.example.data.responses.UserResponse
 import com.example.postgresdatabase.reviews.Reviews
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
@@ -101,4 +104,5 @@ object Users: Table() {
         }
         return true
     }
+
 }

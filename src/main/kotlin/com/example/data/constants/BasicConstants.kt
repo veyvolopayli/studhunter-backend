@@ -22,3 +22,13 @@ const val HOST = "http://5.181.255.253"
 const val ASSEMBLED_P_NAME = "assembled_publications.json"
 
 // /root/studhunter/publications/images/new
+
+object Constants {
+    private const val PUBLICATIONS = "publications"
+    private const val USERS = "users"
+    const val PUB_IMAGES = "$PUBLICATIONS/images"
+    const val USER_IMAGES = "$USERS/profile_images"
+
+    val PRICE_TYPES = mapOf(0 to "р", 1 to "р/час", 2 to "Бесплатно", 3 to "Бартер", 4 to "В проект")
+
+}
