@@ -1,10 +1,13 @@
 package com.example.routes
 
 import com.example.data.models.User
+import com.example.data.models.UserDataModel
 import com.example.data.requests.SignInRequest
 import com.example.data.requests.SignUpRequest
 import com.example.data.responses.AuthResponse
 import com.example.data.userservice.UserDataSource
+import com.example.email.EmailService
+import com.example.postgresdatabase.users.UserData
 import com.example.postgresdatabase.users.Users
 import com.example.security.hashing.HashingService
 import com.example.security.hashing.SaltedHash
@@ -22,7 +25,8 @@ import org.jetbrains.exposed.exceptions.ExposedSQLException
 
 fun Route.signUp(
     hashingService: HashingService,
-    userDataSource: UserDataSource
+    userDataSource: UserDataSource,
+    emailService: EmailService
 ) {
 
     post("signup") {
@@ -48,20 +52,29 @@ fun Route.signUp(
 
         val saltedHash = hashingService.generateSaltedHash(request.password)
 
+        val newUser = User(
+            username = request.username,
+            password = saltedHash.hash,
+            salt = saltedHash.salt,
+            email = request.email,
+            fullName = if (request.name == null || request.surname == null) null else "${request.name} ${request.surname}",
+            university = request.university
+        )
+
         try {
-            Users.insertUser(
-                User(
-                    username = request.username,
-                    password = saltedHash.hash,
-                    salt = saltedHash.salt,
-                    email = request.email,
-                    fullName = if (request.name == null || request.surname == null) null else "${request.name} ${request.surname}",
-                    university = request.university
-                )
-            )
+            Users.insertUser(newUser)
         } catch (e: ExposedSQLException) {
             call.respond(status = HttpStatusCode.Conflict, message = "User already exists")
         }
+
+        val userData = UserDataModel(userId = newUser.id)
+
+        UserData.insertUserData(userData) ?: kotlin.run {
+            call.respond(status = HttpStatusCode.Conflict, message = "Fail to insert user data")
+            return@post
+        }
+
+        emailService.sendConfirmationEmail(newUser.email!!, userData.confirmationCode)
 
         call.respond(status = HttpStatusCode.OK, message = "Registration success")
 

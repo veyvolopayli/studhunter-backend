@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.AmazonS3
 import com.example.data.publicationservice.PublicationService
 import com.example.data.userservice.UserDataSource
 import com.example.data.usersservice.UsersService
+import com.example.email.EmailService
 import com.example.routes.*
 import com.example.security.hashing.HashingService
 import com.example.security.token.TokenConfig
@@ -20,11 +21,12 @@ fun Application.configureRouting(
     tokenConfig: TokenConfig,
     publicationService: PublicationService,
     usersService: UsersService,
-    s3: AmazonS3
+    s3: AmazonS3,
+    emailService: EmailService
 ) {
     routing {
         signIn(userDataSource, hashingService, tokenService, tokenConfig)
-        signUp(hashingService, userDataSource)
+        signUp(hashingService, userDataSource, emailService)
         authenticate()
         getSecretInfo()
         getPublicationRoutes()

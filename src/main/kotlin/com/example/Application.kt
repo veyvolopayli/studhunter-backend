@@ -6,7 +6,7 @@ import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.example.data.publicationservice.YcPublicationService
 import com.example.data.usersservice.YcUsersService
-import com.example.features.startServices
+import com.example.email.EmailService
 import io.ktor.server.application.*
 import com.example.plugins.*
 import com.example.security.hashing.SHA256HashingService
@@ -15,9 +15,6 @@ import com.example.security.token.TokenConfig
 import com.example.yandexcloud.YcUserDataSource
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.Database
 
 
@@ -63,17 +60,27 @@ fun Application.module() {
 
     val usersService = YcUsersService(s3)
 
+    val emailService = EmailService(
+        host = "smtp.yandex.ru",
+        port = 465,
+        username = "studhunterapp@yandex.ru",
+        password = System.getenv("MAIL_YANDEX_PASSWORD"),
+        ssl = true,
+        senderEmail = "studhunterapp@yandex.ru"
+    )
+
     /*runBlocking {
         withContext(Dispatchers.IO) {
             startServices(usersService, publicationService)
         }
     }*/
 
+    emailService.sendConfirmationEmail("ilya.polovyev06@gmail.com", 895271)
 
     configureSockets()
     configureSerialization()
     configureMonitoring()
     configureSecurity(tokenConfig)
-    configureRouting(userDataSource, hashingService, tokenService, tokenConfig, publicationService, usersService, s3)
+    configureRouting(userDataSource, hashingService, tokenService, tokenConfig, publicationService, usersService, s3, emailService)
 
 }
