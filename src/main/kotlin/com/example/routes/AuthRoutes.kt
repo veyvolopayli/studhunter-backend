@@ -76,7 +76,7 @@ fun Route.signUp(
 
         emailService.sendConfirmationEmail(newUser.email!!, newUser.username, userData.confirmationCode)
 
-        call.respond(status = HttpStatusCode.OK, message = "Registration success")
+        call.respond(status = HttpStatusCode.OK, message = newUser.id)
 
         /*val areFieldsBlank = request.username.isBlank() || request.password.isBlank()
         val isPwTooShort = request.password.length < 6

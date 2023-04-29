@@ -69,7 +69,7 @@ fun Route.insertNewRating(usersService: UsersService) {
 }
 
 fun Route.confirmationCode() {
-    post("users/confirm") {
+    post("users/user/email/confirm") {
         val request = call.receiveNullable<ConfirmCodeRequest>() ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@post
@@ -86,7 +86,7 @@ fun Route.confirmationCode() {
         call.respond(status = HttpStatusCode.OK, message = "Success")
     }
 
-    get("users/status/{id}") {
+    get("users/user/{id}/status") {
 
         val userId = call.parameters["id"] ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)

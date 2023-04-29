@@ -23,7 +23,7 @@ class EmailService(
     fun sendConfirmationEmail(recipientEmail: String, username: String, confirmationCode: Int) {
         email.apply {
             addTo(recipientEmail)
-            subject = "<b>Код для подтверждения StudHunter</b>"
+            subject = "Код для подтверждения StudHunter"
             setHtmlMsg("<p>Уважаемый $username, ваш код подтверждения для регистрации в приложении StudHunter:</p><h1><b>$confirmationCode</b></h1>")
             setCharset("UTF-8")
         }.send()
