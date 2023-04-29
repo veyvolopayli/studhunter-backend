@@ -1,12 +1,9 @@
 package com.example.postgresdatabase.users
 
 import com.example.data.models.UserDataModel
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.insertIgnore
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import kotlin.random.Random
 
 object UserData: Table() {
@@ -29,17 +26,25 @@ object UserData: Table() {
         } catch (e: Exception) { null }
     }
 
+    fun fetchUserEmailConfirmed(userId: String): Boolean? {
+        return try {
+            transaction {
+                val userData = select { UserData.userId.eq(userId) }.single()
+                userData[emailConfirmed]
+            }
+        } catch (e: Exception) { null }
+    }
+
     fun confirm(userId: String, code: Int): Boolean? {
         return try {
             transaction {
-                update({
-                    UserData.userId.eq(userId)
-                    confirmationCode.eq(code)
+                val affectedRows = update({
+                    (UserData.userId eq userId) and (confirmationCode eq code) and (emailConfirmed eq false)
                 }) {
                     it[emailConfirmed] = true
                 }
+                if (affectedRows > 0) true else null
             }
-            true
         } catch (e: Exception) {
             e.printStackTrace()
             null

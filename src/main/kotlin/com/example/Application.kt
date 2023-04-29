@@ -75,7 +75,6 @@ fun Application.module() {
         }
     }*/
 
-    emailService.sendConfirmationEmail("ilya.polovyev06@gmail.com", 895271)
 
     configureSockets()
     configureSerialization()

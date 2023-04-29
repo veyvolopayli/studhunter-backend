@@ -74,7 +74,7 @@ fun Route.signUp(
             return@post
         }
 
-        emailService.sendConfirmationEmail(newUser.email!!, userData.confirmationCode)
+        emailService.sendConfirmationEmail(newUser.email!!, newUser.username, userData.confirmationCode)
 
         call.respond(status = HttpStatusCode.OK, message = "Registration success")
 
