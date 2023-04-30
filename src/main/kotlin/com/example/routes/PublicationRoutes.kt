@@ -36,7 +36,7 @@ import kotlin.io.path.outputStream
 
 fun Route.getPublicationRoutes() {
     authenticate {
-        get("publications/{id}") {
+        get("publications/id/{id}") {
             val id = call.parameters["id"] ?: kotlin.run {
                 call.respond(HttpStatusCode.BadRequest)
                 return@get
@@ -77,7 +77,7 @@ fun Route.getPublicationRoutes() {
         }
     }
 
-    get("publications/{query}") {
+    get("publications/query/{query}") {
         val query = call.parameters["query"] ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@get
@@ -87,7 +87,7 @@ fun Route.getPublicationRoutes() {
         call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
     }
 
-    get("publications/{category}") {
+    get("publications/category/{category}") {
         val category = call.parameters["category"] ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@get
