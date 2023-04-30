@@ -36,53 +36,32 @@ import kotlin.io.path.outputStream
 
 fun Route.getPublicationRoutes() {
     authenticate {
-        get("publications") {
-            val query = call.parameters["query"]
-            val category = call.parameters["category"]
-            val id = call.parameters["id"]
-
-            if (query != null) {
-                val publications = Publications.fetchPublicationsByQuery(query = query)
-                call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
+        get("publications/{id}") {
+            val id = call.parameters["id"] ?: kotlin.run {
+                call.respond(HttpStatusCode.BadRequest)
                 return@get
             }
 
-            if (category != null) {
-                val publications = Publications.fetchPublicationsByCategory(searchCategory = category)
-                call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
+            val publication = Publications.fetchPublication(searchId = id) ?: kotlin.run {
+                call.respond(status = HttpStatusCode.BadRequest, message = "Publication does not exist")
                 return@get
             }
 
-            if (id != null) {
-                val publication = Publications.fetchPublication(searchId = id) ?: kotlin.run {
-                    call.respond(status = HttpStatusCode.BadRequest, message = "Publication does not exist")
-                    return@get
-                }
+            call.respond(status = HttpStatusCode.OK, message = publication)
 
-                call.respond(status = HttpStatusCode.OK, message = publication)
-
-                val principal = call.principal<JWTPrincipal>()
-                val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
-                    call.respond(HttpStatusCode.Conflict)
-                    return@get
-                }
-
-                val user = Users.fetchUserById(userId) ?: kotlin.run {
-                    call.respond(HttpStatusCode.Conflict)
-                    return@get
-                }
-
-                PublicationViews.insertView(id, user.username)
-
+            val principal = call.principal<JWTPrincipal>()
+            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
                 return@get
             }
 
-        }
+            val user = Users.fetchUserById(userId) ?: kotlin.run {
+                call.respond(HttpStatusCode.Conflict)
+                return@get
+            }
 
-        get("publications/fetch") {
-            val publications = Publications.fetchAllPublications()
-            call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
-            return@get
+            PublicationViews.insertView(id, user.username)
+
         }
 
         get("publications/favorites/fetch") {
@@ -96,27 +75,54 @@ fun Route.getPublicationRoutes() {
 
             call.respond(status = HttpStatusCode.OK, message = favorites)
         }
-
-        get("publications/views/{id}") {
-            val publicationId = call.parameters["id"] ?: kotlin.run {
-                call.respond(HttpStatusCode.BadRequest)
-                return@get
-            }
-            val viewCount = PublicationViews.fetchViewCount(publicationId)
-
-            call.respond(status = HttpStatusCode.OK, message = viewCount)
-        }
-
-        get("publications/favorites/count/{id}") {
-            val publicationId = call.parameters["id"] ?: kotlin.run {
-                call.respond(HttpStatusCode.BadRequest)
-                return@get
-            }
-            val count = FavoritePublications.fetchPubInFavoritesCount(publicationId)
-
-            call.respond(status = HttpStatusCode.OK, message = count)
-        }
     }
+
+    get("publications/{query}") {
+        val query = call.parameters["query"] ?: kotlin.run {
+            call.respond(HttpStatusCode.BadRequest)
+            return@get
+        }
+
+        val publications = Publications.fetchPublicationsByQuery(query = query)
+        call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
+    }
+
+    get("publications/{category}") {
+        val category = call.parameters["category"] ?: kotlin.run {
+            call.respond(HttpStatusCode.BadRequest)
+            return@get
+        }
+
+        val publications = Publications.fetchPublicationsByCategory(searchCategory = category)
+        call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
+
+    }
+
+    get("publications/fetch") {
+        val publications = Publications.fetchAllPublications()
+        call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
+    }
+
+    get("publications/views/{id}") {
+        val publicationId = call.parameters["id"] ?: kotlin.run {
+            call.respond(HttpStatusCode.BadRequest)
+            return@get
+        }
+        val viewCount = PublicationViews.fetchViewCount(publicationId)
+
+        call.respond(status = HttpStatusCode.OK, message = viewCount)
+    }
+
+    get("publications/favorites/count/{id}") {
+        val publicationId = call.parameters["id"] ?: kotlin.run {
+            call.respond(HttpStatusCode.BadRequest)
+            return@get
+        }
+        val count = FavoritePublications.fetchPubInFavoritesCount(publicationId)
+
+        call.respond(status = HttpStatusCode.OK, message = count)
+    }
+
 }
 
 fun Route.postPublicationRoutes(publicationService: PublicationService) {
