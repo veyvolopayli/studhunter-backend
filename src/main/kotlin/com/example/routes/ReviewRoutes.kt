@@ -40,7 +40,8 @@ fun Route.insertReviews() {
                 userId = userId,
                 reviewerId = authorId,
                 review = request.review,
-                reviewMessage = request.reviewMessage
+                reviewMessage = request.reviewMessage,
+                publicationId = request.publicationId
             )
 
             val newReviewId = Reviews.insertReview(leavedReview = review) ?: kotlin.run {

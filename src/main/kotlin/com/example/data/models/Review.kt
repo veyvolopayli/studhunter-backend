@@ -11,5 +11,6 @@ data class Review(
     val userId: String,
     val review: Double,
     val reviewMessage: String?,
-    val timestamp: Long = getCurrentMills()
+    val timestamp: Long = getCurrentMills(),
+    val publicationId: String
 )
