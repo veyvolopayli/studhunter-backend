@@ -92,7 +92,7 @@ object Users: Table() {
         if (reviews.isNotEmpty()) {
             return try {
                 transaction {
-                    val newRating = reviews.sum() / reviews.count()
+                    val newRating = reviews.filterNotNull().sum() / reviews.count()
                     update({ Users.id eq userId }) {
                         it[rating] = newRating
                     }

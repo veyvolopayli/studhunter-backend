@@ -4,8 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class InsertReviewRequest(
-    val userId: String,
+    val id: String,
     val review: Double,
     val reviewMessage: String?,
-    val publicationId: String
 )

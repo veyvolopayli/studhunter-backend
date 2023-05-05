@@ -3,6 +3,7 @@ package com.example.routes
 import com.example.data.models.Review
 import com.example.data.models.User
 import com.example.data.requests.InsertReviewRequest
+import com.example.data.requests.OpenReviewRequest
 import com.example.postgresdatabase.reviews.Reviews
 import com.example.postgresdatabase.users.Users
 import io.ktor.http.*
@@ -16,7 +17,7 @@ import io.ktor.server.routing.*
 fun Route.insertReviews() {
     authenticate {
         post("users/reviews/new") {
-            val request = call.receiveNullable<InsertReviewRequest>() ?: kotlin.run {
+            val request = call.receiveNullable<OpenReviewRequest>() ?: kotlin.run {
                 call.respond(HttpStatusCode.BadRequest)
                 return@post
             }
@@ -39,17 +40,17 @@ fun Route.insertReviews() {
             val review = Review(
                 userId = userId,
                 reviewerId = authorId,
-                review = request.review,
-                reviewMessage = request.reviewMessage,
+                review = null,
+                reviewMessage = null,
                 publicationId = request.publicationId
             )
 
-            val newReviewId = Reviews.insertReview(leavedReview = review) ?: kotlin.run {
+            val newReviewId = Reviews.openNewReview(reviewToOpen = review) ?: kotlin.run {
                 call.respond(status = HttpStatusCode.Conflict, "Failed to insert new review")
                 return@post
             }
 
-            Users.updateRating(userId)
+//            Users.updateRating(userId)
 
             call.respond(status = HttpStatusCode.OK, message = newReviewId)
         }
