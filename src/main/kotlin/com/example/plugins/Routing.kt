@@ -26,7 +26,7 @@ fun Application.configureRouting(
 ) {
     routing {
         signIn(userDataSource, hashingService, tokenService, tokenConfig)
-        signUp(hashingService, userDataSource, emailService)
+        signUp(hashingService, userDataSource, emailService, tokenService, tokenConfig)
         authenticate()
         getSecretInfo()
         getPublicationRoutes()
@@ -41,7 +41,10 @@ fun Application.configureRouting(
         confirmationCode()
 
         get("/") {
-            call.respond(message = "посоветуйте ониме аниме новичку\nтвое имя\nантон\nа?\nче звал сларк", status = HttpStatusCode.OK)
+            call.respond(
+                message = "посоветуйте ониме аниме новичку\nтвое имя\nантон\nа?\nче звал сларк",
+                status = HttpStatusCode.OK
+            )
         }
     }
 }

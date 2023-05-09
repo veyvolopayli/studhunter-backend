@@ -20,7 +20,7 @@ import com.example.postgresdatabase.publications.FavoritePublications
 import com.example.postgresdatabase.publications.Publications
 import com.example.postgresdatabase.users.Users
 import io.ktor.http.*
-import io.ktor.http.content.*
+import io.ktor.server.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -282,7 +282,7 @@ fun Route.publicationOperationRoutes() {
                 return@post
             }
 
-            val username = Users.fetchUserById(userId)?.username  ?: kotlin.run {
+            val username = Users.fetchUserById(userId)?.username ?: kotlin.run {
                 call.respond(HttpStatusCode.Conflict)
                 return@post
             }
@@ -304,7 +304,7 @@ fun Route.publicationOperationRoutes() {
                 return@post
             }
 
-            call.respond(status = HttpStatusCode.OK, message = "Success\nApproved: ${ request.approved }")
+            call.respond(status = HttpStatusCode.OK, message = "Success\nApproved: ${request.approved}")
 
         }
     }

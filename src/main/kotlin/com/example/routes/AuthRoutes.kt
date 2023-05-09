@@ -26,7 +26,9 @@ import org.jetbrains.exposed.exceptions.ExposedSQLException
 fun Route.signUp(
     hashingService: HashingService,
     userDataSource: UserDataSource,
-    emailService: EmailService
+    emailService: EmailService,
+    tokenService: TokenService,
+    tokenConfig: TokenConfig
 ) {
 
     post("signup") {
@@ -57,7 +59,8 @@ fun Route.signUp(
             password = saltedHash.hash,
             salt = saltedHash.salt,
             email = request.email,
-            fullName = if (request.name == null || request.surname == null) null else "${request.name} ${request.surname}",
+            name = request.name,
+            surname = request.surname,
             university = request.university
         )
 
@@ -74,9 +77,11 @@ fun Route.signUp(
             return@post
         }
 
-        emailService.sendConfirmationEmail(newUser.email!!, newUser.username, userData.confirmationCode)
+        emailService.sendConfirmationEmail(newUser.email, newUser.username, userData.confirmationCode)
 
-        call.respond(status = HttpStatusCode.OK, message = newUser.id)
+        val token = tokenService.generate(config = tokenConfig, TokenClaim(name = "userId", value = newUser.id))
+
+        call.respond(status = HttpStatusCode.OK, message = AuthResponse(token = token))
 
         /*val areFieldsBlank = request.username.isBlank() || request.password.isBlank()
         val isPwTooShort = request.password.length < 6

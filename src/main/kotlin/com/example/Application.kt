@@ -31,8 +31,10 @@ fun main() {
 
 fun Application.module() {
 
-    Database.connect(url = "jdbc:postgresql://5.181.255.253:5432/studhunter", driver = "org.postgresql.Driver",
-        user = System.getenv("POSTGRES_USERNAME"), password = System.getenv("POSTGRES_PASSWORD"))
+    Database.connect(
+        url = "jdbc:postgresql://5.181.255.253:5432/studhunter", driver = "org.postgresql.Driver",
+        user = System.getenv("POSTGRES_USERNAME"), password = System.getenv("POSTGRES_PASSWORD")
+    )
 
     val awsAccessKey = System.getenv("AWS_ACCESS")
     val awsSecretKey = System.getenv("AWS_SECRET")
@@ -80,6 +82,15 @@ fun Application.module() {
     configureSerialization()
     configureMonitoring()
     configureSecurity(tokenConfig)
-    configureRouting(userDataSource, hashingService, tokenService, tokenConfig, publicationService, usersService, s3, emailService)
+    configureRouting(
+        userDataSource,
+        hashingService,
+        tokenService,
+        tokenConfig,
+        publicationService,
+        usersService,
+        s3,
+        emailService
+    )
 
 }

@@ -8,7 +8,8 @@ data class UserResponse(
     val id: String,
     val username: String,
     var rating: Double,
-    val fullName: String?,
-    val email: String?,
+    val name: String?,
+    val surname: String?,
+    val email: String,
     val university: String?
 )

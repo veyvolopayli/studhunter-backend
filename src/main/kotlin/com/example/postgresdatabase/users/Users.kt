@@ -13,14 +13,15 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-object Users: Table() {
+object Users : Table() {
     private val id = Users.varchar("id", 36)
     private val username = Users.varchar("username", 25)
     private val password = Users.varchar("password", 64)
     private val salt = Users.varchar("salt", 64)
     private val rating = Users.double("rating")
-    private val fullName = Users.varchar("fullname", 25).nullable()
-    private val email = Users.varchar("email", 50).nullable()
+    private val name = Users.varchar("name", 25)
+    private val surname = Users.varchar("surname", 25).nullable()
+    private val email = Users.varchar("email", 50)
     private val university = Users.varchar("university", 30).nullable()
 
     fun insertUser(user: User) {
@@ -31,7 +32,8 @@ object Users: Table() {
                 it[password] = user.password
                 it[salt] = user.salt
                 it[rating] = user.rating
-                it[fullName] = user.fullName
+                it[name] = user.name
+                it[surname] = user.surname
                 it[email] = user.email
                 it[university] = user.university
             }
@@ -46,12 +48,15 @@ object Users: Table() {
                     id = user[Users.id],
                     username = user[username],
                     email = user[email],
-                    fullName = user[fullName],
+                    name = user[name],
+                    surname = user[surname],
                     university = user[university],
                     rating = user[rating]
                 )
             }
-        } catch (e: Exception) { null }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun fetchUserDetailed(userName: String): User? {
@@ -62,13 +67,16 @@ object Users: Table() {
                     id = user[Users.id],
                     username = user[username],
                     email = user[email],
-                    fullName = user[fullName],
+                    name = user[name],
+                    surname = user[surname],
                     password = user[password],
                     salt = user[salt],
                     university = user[university]
                 )
             }
-        } catch (e: Exception) { null }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun fetchUserById(userId: String): UserResponse? {
@@ -79,12 +87,15 @@ object Users: Table() {
                     id = user[Users.id],
                     username = user[username],
                     email = user[email],
-                    fullName = user[fullName],
+                    name = user[name],
+                    surname = user[surname],
                     university = user[university],
                     rating = user[rating]
                 )
             }
-        } catch (e: Exception) { null }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun updateRating(userId: String): Boolean? {
