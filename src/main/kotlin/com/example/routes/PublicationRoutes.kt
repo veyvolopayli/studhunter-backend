@@ -4,23 +4,19 @@ import com.amazonaws.services.s3.AmazonS3
 import com.example.BUCKET_NAME
 import com.example.data.constants.Constants
 import com.example.data.constants.HOST
-import com.example.data.constants.NEW_PUB_IMAGES_PATH
-import com.example.data.constants.SERVER_NEW_PUB_IMAGES_PATH
 import com.example.data.models.Publication
 import com.example.data.publicationservice.PublicationService
 import com.example.data.requests.ApprovePublicationRequest
 import com.example.data.requests.FavoritePubRequest
 import com.example.data.requests.PublicationRequest
 import com.example.data.responses.PublicationResponse
-import com.example.features.compressImage
-import com.example.features.save
 import com.example.features.toFile
 import com.example.postgresdatabase.publicationinteractions.PublicationViews
 import com.example.postgresdatabase.publications.FavoritePublications
 import com.example.postgresdatabase.publications.Publications
 import com.example.postgresdatabase.users.Users
 import io.ktor.http.*
-import io.ktor.server.http.content.*
+import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -30,9 +26,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.io.OutputStream
-import java.util.UUID
-import kotlin.io.path.outputStream
+import java.util.*
 
 fun Route.getPublicationRoutes() {
     authenticate {
