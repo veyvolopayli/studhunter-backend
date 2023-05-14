@@ -5,6 +5,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.example.data.publicationservice.YcPublicationService
+import com.example.data.updateservice.YcUpdateRepositoryImpl
 import com.example.data.usersservice.YcUsersService
 import com.example.email.EmailService
 import io.ktor.server.application.*
@@ -71,6 +72,8 @@ fun Application.module() {
         senderEmail = "studhunterapp@yandex.ru"
     )
 
+    val ycUpdateRepository = YcUpdateRepositoryImpl(s3)
+
     /*runBlocking {
         withContext(Dispatchers.IO) {
             startServices(usersService, publicationService)
@@ -90,7 +93,8 @@ fun Application.module() {
         publicationService,
         usersService,
         s3,
-        emailService
+        emailService,
+        ycUpdateRepository
     )
 
 }

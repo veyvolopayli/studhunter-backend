@@ -2,6 +2,7 @@ package com.example.plugins
 
 import com.amazonaws.services.s3.AmazonS3
 import com.example.data.publicationservice.PublicationService
+import com.example.data.updateservice.UpdateRepository
 import com.example.data.userservice.UserDataSource
 import com.example.data.usersservice.UsersService
 import com.example.email.EmailService
@@ -22,7 +23,8 @@ fun Application.configureRouting(
     publicationService: PublicationService,
     usersService: UsersService,
     s3: AmazonS3,
-    emailService: EmailService
+    emailService: EmailService,
+    ycUpdateRepository: UpdateRepository
 ) {
     routing {
         signIn(userDataSource, hashingService, tokenService, tokenConfig)
@@ -39,6 +41,7 @@ fun Application.configureRouting(
         insertReviews()
         publicationOperationRoutes()
         confirmationCode()
+        updateRoutes(ycUpdateRepository)
 
         get("/") {
             call.respond(
