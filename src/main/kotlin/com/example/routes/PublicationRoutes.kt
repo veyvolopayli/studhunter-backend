@@ -3,7 +3,6 @@ package com.example.routes
 import com.amazonaws.services.s3.AmazonS3
 import com.example.BUCKET_NAME
 import com.example.data.constants.Constants
-import com.example.data.constants.HOST
 import com.example.data.models.Publication
 import com.example.data.publicationservice.PublicationService
 import com.example.data.requests.ApprovePublicationRequest
@@ -26,7 +25,6 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.util.*
 
 fun Route.getPublicationRoutes() {
     authenticate {
@@ -123,13 +121,13 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
     authenticate {
         post("publications/new") {
             val multipart = call.receiveMultipart()
-            val parts = mutableListOf<PartData.FileItem>()
+            val imageParts = mutableListOf<PartData.FileItem>()
             var publicationRequest: PublicationRequest? = null
 
             multipart.forEachPart { part ->
                 when (part) {
                     is PartData.FileItem -> {
-                        parts.add(part)
+                        imageParts.add(part)
                     }
 
                     is PartData.FormItem -> {
@@ -144,12 +142,56 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                 part.dispose
             }
 
-            if (publicationRequest == null) {
+            if (imageParts.isEmpty()) {
                 call.respond(status = HttpStatusCode.BadRequest, message = "Bad request")
                 return@post
             }
 
-            val pubId = UUID.randomUUID().toString()
+            publicationRequest?.let { request ->
+
+                val publication = Publication(
+                    title = request.title,
+                    description = request.description,
+                    price = request.price,
+                    priceType = request.priceType,
+                    district = request.district,
+                    category = request.category,
+                    userId = request.userId,
+                    socials = request.socials
+                )
+
+                val createdPublicationId = Publications.insertPublication(publication) ?: run {
+                    call.respond(status = HttpStatusCode.Conflict, message = "Some error with database")
+                    return@post
+                }
+
+                val images: List<File> = imageParts.mapIndexedNotNull { index, fileItem ->
+                    val fileName = "image_$index"
+                    if (fileItem.name == "images") fileItem.toFile(fileName, ".jpeg")
+                    else null
+                }
+
+                images.forEachIndexed { index, file ->
+
+                    val fileInserted = publicationService.insertPublicationImage(
+                        file = file,
+                        fileName = "image_$index",
+                        pubId = createdPublicationId
+                    )
+
+                    if (!fileInserted) {
+                        call.respond(status = HttpStatusCode.Conflict, message = "Failed to upload images")
+                        return@post
+                    }
+                }
+
+                call.respond(status = HttpStatusCode.OK, message = PublicationResponse(success = true))
+                return@post
+            }
+
+            call.respond(status = HttpStatusCode.BadRequest, message = "Bad request")
+
+            /*val pubId = UUID.randomUUID().toString()
 
             val files: List<File> = parts.mapIndexedNotNull { index, fileItem ->
                 val fileName = "image_$index"
@@ -185,7 +227,7 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                 category = publicationRequest!!.category,
                 userId = publicationRequest!!.userId,
                 socials = publicationRequest!!.socials
-            )
+            )*/
 
             /*val publicationUploaded = publicationService.insertPublication(publication)
 
@@ -194,9 +236,7 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                 return@post
             }*/
 
-            Publications.insertPublication(publication)
 
-            call.respond(status = HttpStatusCode.OK, message = PublicationResponse(success = true))
 
 //            publicationService.updatePublications()
 

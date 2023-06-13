@@ -21,6 +21,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.apache.commons.mail.HtmlEmail
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 
 fun Route.signUp(
