@@ -10,10 +10,12 @@ import com.example.data.requests.FavoritePubRequest
 import com.example.data.requests.PublicationRequest
 import com.example.data.responses.PublicationResponse
 import com.example.features.toFile
+import com.example.postgresdatabase.common.Categories
 import com.example.postgresdatabase.publicationinteractions.PublicationViews
 import com.example.postgresdatabase.publications.FavoritePublications
 import com.example.postgresdatabase.publications.Publications
 import com.example.postgresdatabase.users.Users
+import com.example.repositories.PublicationRepository
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -34,7 +36,7 @@ fun Route.getPublicationRoutes() {
                 return@get
             }
 
-            val publication = Publications.fetchPublication(searchId = id) ?: kotlin.run {
+            val publication = Publications.getPublication(id = id) ?: kotlin.run {
                 call.respond(status = HttpStatusCode.BadRequest, message = "Publication does not exist")
                 return@get
             }
@@ -75,7 +77,7 @@ fun Route.getPublicationRoutes() {
             return@get
         }
 
-        val publications = Publications.fetchPublicationsByQuery(query = query)
+        val publications = Publications.getPublicationsByQuery(query = query)
         call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
     }
 
@@ -85,13 +87,13 @@ fun Route.getPublicationRoutes() {
             return@get
         }
 
-        val publications = Publications.fetchPublicationsByCategory(searchCategory = category)
+        val publications = Publications.getPublicationsByCategory(category = category)
         call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
 
     }
 
     get("publications/fetch") {
-        val publications = Publications.fetchAllPublications()
+        val publications = Publications.getAllPublications()
         call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
     }
 
@@ -113,6 +115,15 @@ fun Route.getPublicationRoutes() {
         val count = FavoritePublications.fetchPubInFavoritesCount(publicationId)
 
         call.respond(status = HttpStatusCode.OK, message = count)
+    }
+
+    get("publication/categories") {
+        val categories = Categories.getCategories() ?: run {
+            call.respond(status = HttpStatusCode.Conflict, "Some categories database error")
+            return@get
+        }
+
+        call.respond(status = HttpStatusCode.OK, message = categories)
     }
 
 }
@@ -149,11 +160,18 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
 
             publicationRequest?.let { request ->
 
+                val price = if (request.priceType !in 0..1) null else request.price
+
+                val priceType = request.priceType.toPriceType() ?: run {
+                    call.respond(status = HttpStatusCode.BadRequest, "Provided price type doesn't exist")
+                    return@post
+                }
+
                 val publication = Publication(
                     title = request.title,
                     description = request.description,
-                    price = request.price,
-                    priceType = request.priceType,
+                    price = price,
+                    priceType = priceType,
                     district = request.district,
                     category = request.category,
                     userId = request.userId,
@@ -190,55 +208,6 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
             }
 
             call.respond(status = HttpStatusCode.BadRequest, message = "Bad request")
-
-            /*val pubId = UUID.randomUUID().toString()
-
-            val files: List<File> = parts.mapIndexedNotNull { index, fileItem ->
-                val fileName = "image_$index"
-                if (fileItem.name == "images") fileItem.toFile(fileName, ".jpeg")
-                else null
-            }
-
-            val pathToCardImage = "$HOST/image/$pubId/image_0"
-
-            files.forEachIndexed { index, file ->
-
-                val fileInserted = publicationService.insertPublicationImage(
-                    file = file,
-                    fileName = "image_$index",
-                    pubId = pubId
-                )
-
-                if (!fileInserted) {
-                    call.respond(status = HttpStatusCode.Conflict, message = "Failed to insert file to database")
-                    return@post
-                }
-//                file.save("$SERVER_NEW_PUB_IMAGES_PATH/$pubId", "/image_$index")
-            }
-
-            val publication = Publication(
-                id = pubId,
-                imageUrl = pathToCardImage,
-                title = publicationRequest!!.title,
-                description = publicationRequest!!.description,
-                price = publicationRequest!!.price,
-                priceType = publicationRequest!!.priceType,
-                district = publicationRequest?.district,
-                category = publicationRequest!!.category,
-                userId = publicationRequest!!.userId,
-                socials = publicationRequest!!.socials
-            )*/
-
-            /*val publicationUploaded = publicationService.insertPublication(publication)
-
-            if (!publicationUploaded) {
-                call.respond(status = HttpStatusCode.BadRequest, message = PublicationResponse(success = false))
-                return@post
-            }*/
-
-
-
-//            publicationService.updatePublications()
 
         }
 
@@ -344,25 +313,21 @@ fun Route.publicationOperationRoutes() {
     }
 }
 
-fun Route.getUserPubs(publicationService: PublicationService) {
+fun Route.getUserPubs(publicationRepository: PublicationRepository) {
     authenticate {
-        get("publications/user/{id}") {
+        get("user/{id}/publications") {
             val userId = call.parameters["id"] ?: kotlin.run {
                 call.respond(status = HttpStatusCode.BadRequest, message = "Invalid link")
                 return@get
             }
-            val userPubIds = publicationService.getUserPubIds(userId) ?: kotlin.run {
+            val publications = publicationRepository.getPublicationsByUserId(userId) ?: kotlin.run {
                 call.respond(
-                    status = HttpStatusCode.BadRequest,
+                    status = HttpStatusCode.Conflict,
                     message = "User doesn't have publications or doesn't exist"
                 )
                 return@get
             }
-            val ids = userPubIds.ids
 
-            val publications = ids.mapNotNull {
-                publicationService.getPublicationById(category = it.value, publicationId = it.key)
-            }
             call.respond(status = HttpStatusCode.OK, message = publications)
         }
     }
@@ -402,3 +367,5 @@ fun Route.imageRoutes(s3: AmazonS3) {
         call.respondBytes(bytes, ContentType.Image.JPEG)
     }
 }
+
+private fun Int.toPriceType() = Constants.priceTypes[this]

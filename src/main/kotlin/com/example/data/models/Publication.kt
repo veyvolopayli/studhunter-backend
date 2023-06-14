@@ -1,11 +1,9 @@
 package com.example.data.models
 
-import com.example.data.constants.Constants
 import com.example.data.constants.HOST
 import com.example.features.getCurrentMills
-import com.example.features.getDate
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import java.util.*
 
 @Serializable
 data class Publication(
@@ -13,8 +11,8 @@ data class Publication(
     val imageUrl: String = "$HOST/image/$id/image_0",
     val title: String,
     val description: String,
-    val price: Int,
-    val priceType: Int,
+    val price: Int?,
+    val priceType: String,
     val district: String?,
     val timestamp: Long = getCurrentMills(),
     val category: String,

@@ -58,7 +58,7 @@ fun Route.insertNewRating(usersService: UsersService) {
                 return@get
             }
 
-            val publications = Publications.fetchPublicationsByUserId(searchUserId = userId) ?: kotlin.run {
+            val publications = Publications.getPublicationsByUserId(userId = userId) ?: kotlin.run {
                 call.respond(status = HttpStatusCode.BadRequest, message = "User not found")
                 return@get
             }

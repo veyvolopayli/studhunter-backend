@@ -1,7 +1,6 @@
 package com.example.postgresdatabase.publications
 
 import com.example.data.models.Publication
-import com.example.features.getCurrentMills
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -17,7 +16,7 @@ object FavoritePublications : Table() {
                 val favorites = select { userId.eq(uid) }.toList().map { row ->
                     row[favoritePubId]
                 }
-                val publications = favorites.mapNotNull { Publications.fetchPublication(searchId = it) }
+                val publications = favorites.mapNotNull { Publications.getPublication(id = it) }
                 publications
             }
         } catch (e: Exception) {

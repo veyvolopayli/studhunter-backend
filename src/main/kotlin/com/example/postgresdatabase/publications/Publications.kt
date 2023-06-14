@@ -10,8 +10,8 @@ object Publications : Table(), PublicationRepository {
     private val imageUrl = Publications.varchar("imageurl", 100)
     private val title = Publications.varchar("title", 50)
     private val description = Publications.varchar("description", 1500)
-    private val price = Publications.integer("price")
-    private val priceType = Publications.integer("pricetype")
+    private val price = Publications.integer("price").nullable()
+    private val priceType = Publications.varchar("pricetype", 20)
     private val district = Publications.varchar("district", 50).nullable()
     private val timestamp = Publications.long("timestamp")
     private val category = Publications.varchar("category", 50)
@@ -19,7 +19,7 @@ object Publications : Table(), PublicationRepository {
     private val socials = Publications.varchar("socials", 20)
     private val approved = Publications.bool("approved").nullable()
 
-    override suspend fun insertPublication(publication: Publication): String? {
+    override fun insertPublication(publication: Publication): String? {
         try {
             transaction {
                 Publications.insert {
@@ -43,40 +43,67 @@ object Publications : Table(), PublicationRepository {
         }
     }
 
-    override suspend fun getPublication(id: String): Publication {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getAllPublications(): List<Publication> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getPublicationsByQuery(query: String): List<Publication> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getPublicationsByCategory(category: String): List<Publication> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getPublicationsByUserId(userId: String): List<Publication> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getPublicationsByDistrict(district: String): List<Publication> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun getClosestPublications(district: String): List<Publication> {
-        TODO("Not yet implemented")
-    }
-
-    fun fetchPublication(searchId: String): Publication? {
+    override fun getPublicationsByCategory(category: String): List<Publication>? {
         return try {
             transaction {
-                val publication = Publications.select { Publications.id.eq(searchId) }.single()
+                val publications = Publications.select { Publications.category.eq(category) }.toList().map { row ->
+                    Publication(
+                        id = row[Publications.id],
+                        imageUrl = row[imageUrl],
+                        title = row[title],
+                        description = row[description],
+                        price = row[price],
+                        priceType = row[priceType],
+                        district = row[district],
+                        timestamp = row[timestamp],
+                        category = row[Publications.category],
+                        userId = row[userId],
+                        socials = row[socials],
+                        approved = row[approved]
+                    )
+                }
+                publications.sortedBy { it.timestamp }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override fun getPublicationsByDistrict(district: String): List<Publication>? {
+        return try {
+            transaction {
+                Publications.select { Publications.district.eq(district) }.toList().map { row ->
+                    Publication(
+                        id = row[Publications.id],
+                        imageUrl = row[imageUrl],
+                        title = row[title],
+                        description = row[description],
+                        price = row[price],
+                        priceType = row[priceType],
+                        district = row[Publications.district],
+                        timestamp = row[timestamp],
+                        category = row[category],
+                        userId = row[userId],
+                        socials = row[socials],
+                        approved = row[approved]
+                    )
+                }.sortedBy { it.timestamp }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override fun getClosestPublications(district: String): List<Publication> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getPublication(id: String): Publication? {
+        return try {
+            transaction {
+                val publication = Publications.select { Publications.id.eq(id) }.single()
                 Publication(
-                    id = searchId,
+                    id = id,
                     imageUrl = publication[imageUrl],
                     title = publication[title],
                     description = publication[description],
@@ -95,7 +122,7 @@ object Publications : Table(), PublicationRepository {
         }
     }
 
-    fun fetchAllPublications(): List<Publication>? {
+    override fun getAllPublications(): List<Publication>? {
         return try {
             transaction {
                 val publications = Publications.selectAll().toList().map { row ->
@@ -114,75 +141,23 @@ object Publications : Table(), PublicationRepository {
                         approved = row[approved]
                     )
                 }
-                publications
+                publications.sortedBy { it.timestamp }
             }
         } catch (e: Exception) {
             null
         }
     }
 
-    fun fetchPublicationsByCategory(searchCategory: String): List<Publication>? {
-        return try {
-            transaction {
-                val publications = Publications.select { category.eq(searchCategory) }.toList().map { row ->
-                    Publication(
-                        id = row[Publications.id],
-                        imageUrl = row[imageUrl],
-                        title = row[title],
-                        description = row[description],
-                        price = row[price],
-                        priceType = row[priceType],
-                        district = row[district],
-                        timestamp = row[timestamp],
-                        category = row[category],
-                        userId = row[userId],
-                        socials = row[socials],
-                        approved = row[approved]
-                    )
-                }
-                publications
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    fun fetchPublicationsByDistrict(searchDistrict: String): List<Publication>? {
-        return try {
-            transaction {
-                val publications = Publications.select { district.eq(searchDistrict) }.toList().map { row ->
-                    Publication(
-                        id = row[Publications.id],
-                        imageUrl = row[imageUrl],
-                        title = row[title],
-                        description = row[description],
-                        price = row[price],
-                        priceType = row[priceType],
-                        district = row[district],
-                        timestamp = row[timestamp],
-                        category = row[category],
-                        userId = row[userId],
-                        socials = row[socials],
-                        approved = row[approved]
-                    )
-                }
-                publications
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    fun fetchPublicationsByQuery(query: String): List<Publication>? {
-        return fetchAllPublications()?.filter {
+    override fun getPublicationsByQuery(query: String): List<Publication>? {
+        return getAllPublications()?.filter {
             it.title.contains(query) || it.description.contains(query) || it.category.contains(query)
-        }
+        }?.sortedBy { it.timestamp }
     }
 
-    fun fetchPublicationsByUserId(searchUserId: String): List<Publication>? {
+    override fun getPublicationsByUserId(userId: String): List<Publication>? {
         return try {
             transaction {
-                val publications = Publications.select { userId.eq(searchUserId) }.toList().map { row ->
+                val publications = Publications.select { Publications.userId.eq(userId) }.toList().map { row ->
                     Publication(
                         id = row[Publications.id],
                         imageUrl = row[imageUrl],
@@ -193,19 +168,19 @@ object Publications : Table(), PublicationRepository {
                         district = row[district],
                         timestamp = row[timestamp],
                         category = row[category],
-                        userId = row[userId],
+                        userId = row[Publications.userId],
                         socials = row[socials],
                         approved = row[approved]
                     )
                 }
-                publications
+                publications.sortedBy { it.timestamp }
             }
         } catch (e: Exception) {
             null
         }
     }
 
-    fun updatePublicationStatus(pubId: String, approve: Boolean): Boolean? {
+    override fun updatePublicationStatus(pubId: String, approve: Boolean): Boolean? {
         return try {
             transaction {
                 Publications.update ({ Publications.id.eq(pubId) }) {
@@ -214,10 +189,6 @@ object Publications : Table(), PublicationRepository {
             }
             return approve
         } catch (e: Exception) { null }
-    }
-
-    suspend fun <T> insertPublication(data: T) {
-        TODO("Not yet implemented")
     }
 
 }
