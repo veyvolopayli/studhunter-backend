@@ -13,7 +13,7 @@ object Publications : Table(), PublicationRepository {
     private val price = Publications.integer("price")
     private val priceType = Publications.integer("pricetype")
     private val district = Publications.varchar("district", 50).nullable()
-    private val timestamp = Publications.varchar("timestamp", 30)
+    private val timestamp = Publications.long("timestamp")
     private val category = Publications.varchar("category", 50)
     private val userId = Publications.varchar("userid", 36)
     private val socials = Publications.varchar("socials", 20)

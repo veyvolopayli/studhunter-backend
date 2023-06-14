@@ -16,7 +16,7 @@ data class Publication(
     val price: Int,
     val priceType: Int,
     val district: String?,
-    val timestamp: String = getCurrentMills().toString(),
+    val timestamp: Long = getCurrentMills(),
     val category: String,
     val userId: String,
     val socials: String,
