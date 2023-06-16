@@ -7,6 +7,7 @@ import com.example.data.userservice.UserDataSource
 import com.example.data.usersservice.UsersService
 import com.example.email.EmailService
 import com.example.repositories.PublicationRepository
+import com.example.repositories.UserRepository
 import com.example.routes.*
 import com.example.security.hashing.HashingService
 import com.example.security.token.TokenConfig
@@ -23,6 +24,7 @@ fun Application.configureRouting(
     tokenConfig: TokenConfig,
     publicationService: PublicationService,
     publicationRepository: PublicationRepository,
+    userRepository: UserRepository,
     usersService: UsersService,
     s3: AmazonS3,
     emailService: EmailService,
@@ -38,11 +40,11 @@ fun Application.configureRouting(
         imageRoutes(s3)
         getUserId()
         getUserPubs(publicationRepository)
-        insertNewRating(usersService)
+        userRouting(userRepository)
         fetchReviews()
         insertReviews()
         publicationOperationRoutes()
-        confirmationCode()
+        emailRouting()
         updateRoutes(ycUpdateRepository)
 
         get("/") {

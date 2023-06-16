@@ -1,8 +1,6 @@
 package com.example.routes
 
 import com.example.data.models.Review
-import com.example.data.models.User
-import com.example.data.requests.InsertReviewRequest
 import com.example.data.requests.OpenReviewRequest
 import com.example.postgresdatabase.reviews.Reviews
 import com.example.postgresdatabase.users.Users
@@ -30,7 +28,7 @@ fun Route.insertReviews() {
 
             val userId = request.userId
 
-            val userExists = Users.fetchUserById(userId = userId) != null
+            val userExists = Users.getUserById(userId) != null
 
             if (!userExists) {
                 call.respond(status = HttpStatusCode.BadRequest, message = "User does not exist")
@@ -66,7 +64,7 @@ fun Route.fetchReviews() {
                 return@get
             }
 
-            val userExists = Users.fetchUserById(userId = userId) != null
+            val userExists = Users.getUserById(userId) != null
 
             if (!userExists) {
                 call.respond(status = HttpStatusCode.BadRequest, message = "User does not exist")
@@ -85,7 +83,7 @@ fun Route.fetchReviews() {
                 return@get
             }
 
-            val userExists = Users.fetchUserById(userId = authorId) != null
+            val userExists = Users.getUserById(authorId) != null
 
             if (!userExists) {
                 call.respond(status = HttpStatusCode.BadRequest, message = "User does not exist")

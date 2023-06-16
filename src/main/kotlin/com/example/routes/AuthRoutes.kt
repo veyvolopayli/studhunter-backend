@@ -21,7 +21,6 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.apache.commons.mail.HtmlEmail
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 
 fun Route.signUp(
@@ -46,7 +45,7 @@ fun Route.signUp(
             return@post
         }
 
-        val user = Users.fetchUser(request.username)
+        val user = Users.getUserByUsername(request.username)
 
         if (user != null) {
             call.respond(status = HttpStatusCode.Conflict, message = "User already exists")
@@ -134,7 +133,7 @@ fun Route.signIn(
             return@post
         }
 
-        val user = Users.fetchUserDetailed(request.username) ?: kotlin.run {
+        val user = Users.getUserDetailed(request.username) ?: kotlin.run {
             call.respond(status = HttpStatusCode.BadRequest, message = "User does not exist")
             return@post
         }

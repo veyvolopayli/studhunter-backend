@@ -11,6 +11,7 @@ import com.example.email.EmailService
 import io.ktor.server.application.*
 import com.example.plugins.*
 import com.example.postgresdatabase.publications.Publications
+import com.example.postgresdatabase.users.Users
 import com.example.repositories.PublicationRepository
 import com.example.security.hashing.SHA256HashingService
 import com.example.security.token.JwtTokenService
@@ -77,29 +78,24 @@ fun Application.module() {
     val ycUpdateRepository = YcUpdateRepositoryImpl(s3)
 
     val publicationRepository = Publications
-
-    /*runBlocking {
-        withContext(Dispatchers.IO) {
-            startServices(usersService, publicationService)
-        }
-    }*/
-
+    val userRepository = Users
 
     configureSockets()
     configureSerialization()
     configureMonitoring()
     configureSecurity(tokenConfig)
     configureRouting(
-        userDataSource,
-        hashingService,
-        tokenService,
-        tokenConfig,
-        publicationService,
-        publicationRepository,
-        usersService,
-        s3,
-        emailService,
-        ycUpdateRepository
+        userDataSource = userDataSource,
+        hashingService = hashingService,
+        tokenService = tokenService,
+        tokenConfig = tokenConfig,
+        publicationService = publicationService,
+        publicationRepository = publicationRepository,
+        userRepository = userRepository,
+        usersService = usersService,
+        s3 = s3,
+        emailService = emailService,
+        ycUpdateRepository = ycUpdateRepository
     )
 
 }

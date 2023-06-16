@@ -1,8 +1,6 @@
 package com.example.data.models
 
-import org.bson.codecs.pojo.annotations.BsonId
-import org.bson.types.ObjectId
-import java.util.UUID
+import java.util.*
 
 data class User(
     val id: String = UUID.randomUUID().toString(),

@@ -49,7 +49,7 @@ fun Route.getPublicationRoutes() {
                 return@get
             }
 
-            val user = Users.fetchUserById(userId) ?: kotlin.run {
+            val user = Users.getUserById(userId) ?: kotlin.run {
                 call.respond(HttpStatusCode.Conflict)
                 return@get
             }
@@ -285,7 +285,7 @@ fun Route.publicationOperationRoutes() {
                 return@post
             }
 
-            val username = Users.fetchUserById(userId)?.username ?: kotlin.run {
+            val username = Users.getUserById(userId)?.username ?: kotlin.run {
                 call.respond(HttpStatusCode.Conflict)
                 return@post
             }
