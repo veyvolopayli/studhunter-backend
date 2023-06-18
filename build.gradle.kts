@@ -52,6 +52,8 @@ dependencies {
     implementation("org.postgresql:postgresql:42.5.4")
     implementation("org.apache.commons:commons-email:1.5")
 
+    implementation("net.coobird:thumbnailator:0.4.19")
+
 //    implementation("org.ktorm:ktorm-core:$ktorm_version")
 //    implementation("org.ktorm:ktorm-support-postgresql:$ktorm_version")
 

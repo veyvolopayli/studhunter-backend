@@ -9,6 +9,8 @@ import com.example.data.requests.ApprovePublicationRequest
 import com.example.data.requests.FavoritePubRequest
 import com.example.data.requests.PublicationRequest
 import com.example.data.responses.PublicationResponse
+import com.example.features.deleteFile
+import com.example.features.toCompressedImage
 import com.example.features.toFile
 import com.example.postgresdatabase.common.Categories
 import com.example.postgresdatabase.publicationinteractions.PublicationViews
@@ -185,7 +187,13 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
 
                 val images: List<File> = imageParts.mapIndexedNotNull { index, fileItem ->
                     val fileName = "image_$index"
-                    if (fileItem.name == "images") fileItem.toFile(fileName, ".jpeg")
+                    if (fileItem.name == "images") {
+                        val file = fileItem.toCompressedImage(0.6, fileName, ".jpeg") ?: run {
+                            call.respond(status = HttpStatusCode.Conflict, message = "Error")
+                            return@post
+                        }
+                        file
+                    }
                     else null
                 }
 
@@ -196,6 +204,11 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                         fileName = "image_$index",
                         pubId = createdPublicationId
                     )
+
+                    file.deleteFile() ?: run {
+                        call.respond(status = HttpStatusCode.Conflict, message = "Failed to delete a temp image")
+                        return@post
+                    }
 
                     if (!fileInserted) {
                         call.respond(status = HttpStatusCode.Conflict, message = "Failed to upload images")

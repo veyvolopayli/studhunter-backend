@@ -7,7 +7,7 @@ import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
 
-fun compressImage(inputFile: File, outputFile: File, quality: Float) {
+fun toCompressedImage(inputFile: File, outputFile: File, quality: Float) {
     try {
         val inputStream = ImageIO.createImageInputStream(inputFile)
         val reader = ImageIO.getImageReaders(inputStream).next()
