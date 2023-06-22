@@ -29,6 +29,7 @@ object Constants {
     const val PUB_IMAGES = "$PUBLICATIONS/images"
     const val USER_IMAGES = "$USERS/profile_images"
 
-    val priceTypes = mapOf(0 to "р", 1 to "р/час", 2 to "Бесплатно", 3 to "Бартер", 4 to "В проект")
+//    val priceTypes = mapOf(0 to "р", 1 to "р/час", 2 to "Бесплатно", 3 to "Бартер", 4 to "В проект")
+    val priceTypes = listOf("р", "р/час", "Бесплатно", "Бартер", "В проект")
 }
 

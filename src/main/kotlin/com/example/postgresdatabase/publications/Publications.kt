@@ -3,6 +3,7 @@ package com.example.postgresdatabase.publications
 import com.example.data.models.Publication
 import com.example.repositories.PublicationRepository
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Publications : Table(), PublicationRepository {
@@ -189,6 +190,18 @@ object Publications : Table(), PublicationRepository {
             }
             return approve
         } catch (e: Exception) { null }
+    }
+
+    override fun deletePublication(publicationId: String): Int? {
+        return try {
+            transaction {
+                Publications.deleteWhere {
+                    id eq publicationId
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 
 }

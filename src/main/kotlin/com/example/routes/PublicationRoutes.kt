@@ -13,6 +13,7 @@ import com.example.features.deleteFile
 import com.example.features.toCompressedImage
 import com.example.features.toFile
 import com.example.postgresdatabase.common.Categories
+import com.example.postgresdatabase.common.PriceTypes
 import com.example.postgresdatabase.publicationinteractions.PublicationViews
 import com.example.postgresdatabase.publications.FavoritePublications
 import com.example.postgresdatabase.publications.Publications
@@ -128,6 +129,14 @@ fun Route.getPublicationRoutes() {
         call.respond(status = HttpStatusCode.OK, message = categories)
     }
 
+    get("publication/priceTypes") {
+        val priceTypes = PriceTypes.getPriceTypes() ?: run {
+            call.respond(status = HttpStatusCode.Conflict, "Some price types database error")
+            return@get
+        }
+        call.respond(status = HttpStatusCode.OK, message = priceTypes)
+    }
+
 }
 
 fun Route.postPublicationRoutes(publicationService: PublicationService) {
@@ -162,18 +171,18 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
 
             publicationRequest?.let { request ->
 
-                val price = if (request.priceType !in 0..1) null else request.price
-
-                val priceType = request.priceType.toPriceType() ?: run {
-                    call.respond(status = HttpStatusCode.BadRequest, "Provided price type doesn't exist")
+                if (request.priceType.trim() !in Constants.priceTypes) {
+                    call.respond(status = HttpStatusCode.BadRequest, message = "Incorrect type of price")
                     return@post
                 }
+
+                val price = if (request.priceType !in Constants.priceTypes.subList(0, 2)) null else request.price
 
                 val publication = Publication(
                     title = request.title,
                     description = request.description,
                     price = price,
-                    priceType = priceType,
+                    priceType = request.priceType,
                     district = request.district,
                     category = request.category,
                     userId = request.userId,
@@ -190,6 +199,7 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                     if (fileItem.name == "images") {
                         val file = fileItem.toCompressedImage(0.6, fileName, ".jpeg") ?: run {
                             call.respond(status = HttpStatusCode.Conflict, message = "Error")
+                            Publications.deletePublication(createdPublicationId)
                             return@post
                         }
                         file
@@ -212,6 +222,7 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
 
                     if (!fileInserted) {
                         call.respond(status = HttpStatusCode.Conflict, message = "Failed to upload images")
+                        Publications.deletePublication(createdPublicationId)
                         return@post
                     }
                 }
