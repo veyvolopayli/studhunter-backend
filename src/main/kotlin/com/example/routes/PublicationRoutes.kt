@@ -80,8 +80,11 @@ fun Route.getPublicationRoutes() {
             return@get
         }
 
-        val publications = Publications.getPublicationsByQuery(query = query)
-        call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
+        val publications = Publications.getPublicationsByQuery(query = query) ?: run {
+            call.respond(status = HttpStatusCode.Conflict, "Something with publications database")
+            return@get
+        }
+        call.respond(status = HttpStatusCode.OK, message = publications)
     }
 
     get("publications/category/{category}") {

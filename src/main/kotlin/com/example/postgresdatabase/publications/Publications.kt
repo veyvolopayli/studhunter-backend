@@ -4,6 +4,7 @@ import com.example.data.models.Publication
 import com.example.repositories.PublicationRepository
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Publications : Table(), PublicationRepository {
@@ -47,7 +48,7 @@ object Publications : Table(), PublicationRepository {
     override fun getPublicationsByCategory(category: String): List<Publication>? {
         return try {
             transaction {
-                val publications = Publications.select { Publications.category.eq(category) }.toList().map { row ->
+                val publications = Publications.select { Publications.category.eq(category) }.map { row ->
                     Publication(
                         id = row[Publications.id],
                         imageUrl = row[imageUrl],
@@ -73,7 +74,7 @@ object Publications : Table(), PublicationRepository {
     override fun getPublicationsByDistrict(district: String): List<Publication>? {
         return try {
             transaction {
-                Publications.select { Publications.district.eq(district) }.toList().map { row ->
+                Publications.select { Publications.district.eq(district) }.map { row ->
                     Publication(
                         id = row[Publications.id],
                         imageUrl = row[imageUrl],
@@ -126,7 +127,7 @@ object Publications : Table(), PublicationRepository {
     override fun getAllPublications(): List<Publication>? {
         return try {
             transaction {
-                val publications = Publications.selectAll().toList().map { row ->
+                val publications = Publications.selectAll().map { row ->
                     Publication(
                         id = row[Publications.id],
                         imageUrl = row[imageUrl],
@@ -150,15 +151,35 @@ object Publications : Table(), PublicationRepository {
     }
 
     override fun getPublicationsByQuery(query: String): List<Publication>? {
-        return getAllPublications()?.filter {
-            it.title.contains(query) || it.description.contains(query) || it.category.contains(query)
-        }?.sortedBy { it.timestamp }
+        return try {
+            val lowerQuery = query.lowercase()
+            transaction {
+                Publications.select { (title.lowerCase() like "%$lowerQuery%") or (description.lowerCase() like "%$lowerQuery%") }.map { row ->
+                    Publication(
+                        id = row[Publications.id],
+                        imageUrl = row[imageUrl],
+                        title = row[title],
+                        description = row[description],
+                        price = row[price],
+                        priceType = row[priceType],
+                        district = row[district],
+                        timestamp = row[timestamp],
+                        category = row[category],
+                        userId = row[userId],
+                        socials = row[socials],
+                        approved = row[approved]
+                    )
+                }.sortedBy { it.timestamp }
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     override fun getPublicationsByUserId(userId: String): List<Publication>? {
         return try {
             transaction {
-                val publications = Publications.select { Publications.userId.eq(userId) }.toList().map { row ->
+                val publications = Publications.select { Publications.userId.eq(userId) }.map { row ->
                     Publication(
                         id = row[Publications.id],
                         imageUrl = row[imageUrl],
