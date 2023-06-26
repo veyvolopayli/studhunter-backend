@@ -72,6 +72,17 @@ fun Route.getPublicationRoutes() {
 
             call.respond(status = HttpStatusCode.OK, message = favorites)
         }
+
+        get("publications/{id}/delete") {
+            val id = call.parameters["id"] ?: run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            Publications.deletePublication(id) ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "Failed to delete publication")
+                return@get
+            }
+        }
     }
 
     get("publications/query/{query}") {
@@ -159,6 +170,7 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                         if (part.name == "publicationData") {
                             val jsonString = part.value
                             publicationRequest = Json.decodeFromString<PublicationRequest>(jsonString)
+                            println(publicationRequest.toString())
                         }
                     }
 
@@ -230,7 +242,7 @@ fun Route.postPublicationRoutes(publicationService: PublicationService) {
                     }
                 }
 
-                call.respond(status = HttpStatusCode.OK, message = PublicationResponse(success = true))
+                call.respond(status = HttpStatusCode.OK, message = createdPublicationId)
                 return@post
             }
 
@@ -394,5 +406,3 @@ fun Route.imageRoutes(s3: AmazonS3) {
         call.respondBytes(bytes, ContentType.Image.JPEG)
     }
 }
-
-private fun Int.toPriceType() = Constants.priceTypes[this]
