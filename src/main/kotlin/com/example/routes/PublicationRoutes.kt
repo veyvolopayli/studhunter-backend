@@ -8,13 +8,12 @@ import com.example.data.publicationservice.PublicationService
 import com.example.data.requests.ApprovePublicationRequest
 import com.example.data.requests.FavoritePubRequest
 import com.example.data.requests.PublicationRequest
-import com.example.data.responses.PublicationResponse
 import com.example.features.deleteFile
 import com.example.features.toCompressedImage
-import com.example.features.toFile
 import com.example.postgresdatabase.common.Categories
 import com.example.postgresdatabase.common.PriceTypes
-import com.example.postgresdatabase.publicationinteractions.PublicationViews
+import com.example.postgresdatabase.publication_interactions.PublicationViews
+import com.example.postgresdatabase.publication_place.Districts
 import com.example.postgresdatabase.publications.FavoritePublications
 import com.example.postgresdatabase.publications.Publications
 import com.example.postgresdatabase.users.Users
@@ -149,6 +148,14 @@ fun Route.getPublicationRoutes() {
             return@get
         }
         call.respond(status = HttpStatusCode.OK, message = priceTypes)
+    }
+
+    get("publication/districts") {
+        val districts = Districts.getDistricts() ?: run {
+            call.respond(status = HttpStatusCode.Conflict, "Obtaining districts ended in failure")
+            return@get
+        }
+        call.respond(status = HttpStatusCode.OK, message = districts)
     }
 
 }

@@ -1,4 +1,4 @@
-package com.example.postgresdatabase.publicationinteractions
+package com.example.postgresdatabase.publication_interactions
 
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
