@@ -4,6 +4,7 @@ import com.example.data.responses.ShortUserResponse
 import com.example.data.responses.UserResponse
 import com.example.data.responses.toShortUserResponse
 import com.example.postgresdatabase.publications.Publications
+import com.example.postgresdatabase.universities.Universities
 import com.example.repositories.UserRepository
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -15,6 +16,14 @@ fun Route.userRouting(userRepository: UserRepository) {
 
     get("user/public/get") {
         makeGetUserCall(call, userRepository, false)
+    }
+
+    get("universities/get") {
+        val universities = Universities.getUniversities() ?: run {
+            call.respond(status = HttpStatusCode.InternalServerError, "Couldn't get universities")
+            return@get
+        }
+        call.respond(status = HttpStatusCode.OK, message = universities)
     }
 
     authenticate {
@@ -50,8 +59,6 @@ fun Route.userRouting(userRepository: UserRepository) {
                 call.respond(HttpStatusCode.BadRequest)
                 return@get
             }
-
-            val l = call
 
             val publications = Publications.getPublicationsByUserId(userId = userId) ?: kotlin.run {
                 call.respond(status = HttpStatusCode.BadRequest, message = "User not found")

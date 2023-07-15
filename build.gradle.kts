@@ -54,6 +54,8 @@ dependencies {
 
     implementation("net.coobird:thumbnailator:0.4.19")
 
+    implementation("org.jsoup:jsoup:1.16.1")
+
 //    implementation("org.ktorm:ktorm-core:$ktorm_version")
 //    implementation("org.ktorm:ktorm-support-postgresql:$ktorm_version")
 
