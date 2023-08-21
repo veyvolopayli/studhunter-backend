@@ -4,6 +4,8 @@ import com.studhunter.api.users.model.User
 import com.studhunter.api.users.responses.UserResponse
 import com.studhunter.api.reviews.tables.Reviews
 import com.studhunter.api.users.repository.UsersRepository
+import com.studhunter.api.users.requests.EditProfileRequest
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
@@ -94,6 +96,20 @@ object Users : Table(), UsersRepository {
                     salt = user[salt],
                     university = user[university]
                 )
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override fun editUser(userID: String, editProfileRequest: EditProfileRequest): Boolean? {
+        return try {
+            transaction {
+                update({ Users.id.eq(userID) }) {
+                    it[name] = editProfileRequest.name
+                    it[surname] = editProfileRequest.surname
+                    it[university] = editProfileRequest.university
+                } > 0
             }
         } catch (e: Exception) {
             null

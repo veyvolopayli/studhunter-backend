@@ -1,31 +1,36 @@
 package com.studhunter.api.publications.tables
 
 import com.studhunter.api.publications.repository.PublicationViewsRepository
+import io.ktor.util.date.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object PublicationViews: Table("publication_views"), PublicationViewsRepository {
-    private val pubId = varchar("publicationid", 12)
-    private val username = varchar("username", 20)
+    private val pubId = varchar("publication_id", 36)
+    private val username = varchar("viewer_id", 36)
+    private val timestamp = long("timestamp")
 
-    override fun insertView(publicationId: String, username: String): Boolean {
+    override fun insertView(publicationId: String, username: String): Boolean? {
         return try {
             transaction {
                 insertIgnore {
-                    it[pubId] = publicationId.substring(0, 12)
+                    it[pubId] = publicationId
                     it[PublicationViews.username] = username
-                }
-                true
+                    it[timestamp] = getTimeMillis()
+                }.insertedCount > 0
             }
         } catch (e: Exception) {
-            false
+            null
         }
     }
 
-    override fun fetchViewsCount(publicationId: String): Int {
+    override fun fetchViewsCount(publicationId: String): Long {
         return try {
-            transaction { select { pubId.eq(publicationId.substring(0, 12)) }.count().toInt() }
-        } catch (e: Exception) { 0 }
+            transaction { select { pubId.eq(publicationId) }.count() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            0
+        }
     }
 
 }

@@ -9,4 +9,7 @@ object Constants {
 
     const val USERS_DATA_PATH = "users_data"
     const val HOST = "http://5.181.255.253"
+
+    const val AVATARS_PATH = "users/avatars/"
+    const val JPEG = ".jpeg"
 }

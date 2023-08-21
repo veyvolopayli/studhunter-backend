@@ -9,6 +9,7 @@ import com.studhunter.api.common.tables.PriceTypes
 import com.studhunter.api.features.deleteFile
 import com.studhunter.api.features.getAuthenticatedUserID
 import com.studhunter.api.features.toCompressedImage
+import com.studhunter.api.features.toCompressedImageFile
 import com.studhunter.api.publications.model.Publication
 import com.studhunter.api.publications.repository.PublicationsRepository
 import com.studhunter.api.publications.repository.YCloudPublicationsRepository
@@ -43,22 +44,10 @@ fun Route.getPublicationRoutes() {
                 call.respond(status = HttpStatusCode.BadRequest, message = "Publication does not exist")
                 return@get
             }
-
             call.respond(status = HttpStatusCode.OK, message = publication)
 
-            val principal = call.principal<JWTPrincipal>()
-            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
-                call.respond(HttpStatusCode.Conflict)
-                return@get
-            }
-
-            val user = Users.getUserById(userId) ?: kotlin.run {
-                call.respond(HttpStatusCode.Conflict)
-                return@get
-            }
-
-            PublicationViews.insertView(id, user.username)
-
+            val userID = call.getAuthenticatedUserID() ?: return@get
+            PublicationViews.insertView(id, userID)
         }
 
         get("publications/favorites/fetch") {
@@ -114,14 +103,14 @@ fun Route.getPublicationRoutes() {
         call.respond(status = HttpStatusCode.OK, message = publications ?: emptyList())
     }
 
-    get("publications/views/{id}") {
+    get("publications/{id}/views") {
         val publicationId = call.parameters["id"] ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@get
         }
-        val viewCount = PublicationViews.fetchViewsCount(publicationId)
+        val viewsCount = PublicationViews.fetchViewsCount(publicationId)
 
-        call.respond(status = HttpStatusCode.OK, message = viewCount)
+        call.respond(status = HttpStatusCode.OK, message = viewsCount)
     }
 
     get("publications/favorites/count/{id}") {
@@ -159,6 +148,8 @@ fun Route.getPublicationRoutes() {
         call.respond(status = HttpStatusCode.OK, message = districts)
     }
 
+
+
 }
 
 fun Route.postPublicationRoutes(yCloudPublicationsRepository: YCloudPublicationsRepository) {
@@ -178,7 +169,6 @@ fun Route.postPublicationRoutes(yCloudPublicationsRepository: YCloudPublications
                         if (part.name == "publicationData") {
                             val jsonString = part.value
                             publicationRequest = Json.decodeFromString<PublicationRequest>(jsonString)
-                            println(publicationRequest.toString())
                         }
                     }
 
@@ -217,13 +207,13 @@ fun Route.postPublicationRoutes(yCloudPublicationsRepository: YCloudPublications
                     return@post
                 }
 
-                val images: List<File> = imageParts.mapIndexedNotNull { index, fileItem ->
-                    val fileName = "image_$index"
+                val images: List<File> = imageParts.mapNotNull { fileItem ->
                     if (fileItem.name == "images") {
-                        val file = fileItem.toCompressedImage(0.6, fileName, ".jpeg") ?: run {
-                            call.respond(status = HttpStatusCode.Conflict, message = "Error")
-                            Publications.deletePublication(createdPublicationId)
-                            return@post
+                        val stream = fileItem.streamProvider()
+                        val file = try {
+                            stream.toCompressedImageFile(0.5)
+                        } catch (e: Exception) {
+                            null
                         }
                         file
                     }
@@ -277,15 +267,30 @@ fun Route.postPublicationRoutes(yCloudPublicationsRepository: YCloudPublications
             call.respond(HttpStatusCode.OK)
         }
 
-        post("publications/favorites/remove-single") {
+        get("favorites/publication/{id}/check") {
+            val userID = call.getAuthenticatedUserID() ?: run {
+                call.respond(status = HttpStatusCode.Unauthorized, "token is not valid")
+                return@get
+            }
+            val pubID = call.parameters["id"] ?: run {
+                call.respond(status = HttpStatusCode.BadRequest, message = "Invalid id")
+                return@get
+            }
+            val isFavorite = FavoritePublications.isInFavorites(userID, pubID) ?: run {
+                call.respond(status = HttpStatusCode.InternalServerError, message = "HAHAHAAHAHHAHAHAH")
+                return@get
+            }
+            call.respond(status = HttpStatusCode.OK, message = isFavorite)
+        }
+
+        post("favorites/publication/remove-single") {
             val request = call.receiveNullable<FavoritePubRequest>() ?: kotlin.run {
                 call.respond(HttpStatusCode.BadRequest)
                 return@post
             }
 
-            val principal = call.principal<JWTPrincipal>()
-            val userId = principal?.getClaim("userId", String::class) ?: kotlin.run {
-                call.respond(HttpStatusCode.Conflict)
+            val userId = call.getAuthenticatedUserID() ?: run {
+                call.respond(status = HttpStatusCode.Unauthorized, "token is not valid")
                 return@post
             }
 
@@ -359,29 +364,8 @@ fun Route.publicationOperationRoutes() {
     }
 }
 
-fun Route.getUserPubs(publicationRepository: PublicationsRepository) {
-    authenticate {
-        get("user/{id}/publications") {
-            val userId = call.parameters["id"] ?: kotlin.run {
-                call.respond(status = HttpStatusCode.BadRequest, message = "Invalid link")
-                return@get
-            }
-            val publications = publicationRepository.getPublicationsByUserId(userId) ?: kotlin.run {
-                call.respond(
-                    status = HttpStatusCode.Conflict,
-                    message = "User doesn't have publications or doesn't exist"
-                )
-                return@get
-            }
-
-            call.respond(status = HttpStatusCode.OK, message = publications)
-        }
-    }
-}
-
 fun Route.imageRoutes(s3: AmazonS3) {
     get("image/{id}/{name}") {
-
         val publicationId = call.parameters["id"] ?: kotlin.run {
             call.respond(
                 status = HttpStatusCode.BadRequest,
@@ -389,26 +373,15 @@ fun Route.imageRoutes(s3: AmazonS3) {
             )
             return@get
         }
-
         val imageName = call.parameters["name"] ?: kotlin.run {
-            call.respond(
-                status = HttpStatusCode.BadRequest,
-                message = "Invalid link"
-            )
+            call.respond(status = HttpStatusCode.BadRequest, message = "Invalid link")
             return@get
         }
-
-        val s3Object =
-            s3.getObject(BUCKET_NAME, "${Constants.PUB_IMAGES}/$publicationId/$imageName.jpeg") ?: kotlin.run {
-                call.respond(
-                    status = HttpStatusCode.BadRequest,
-                    message = "Image not found"
-                )
-                return@get
-            }
-
-        val inputStream = s3Object.objectContent
-        val bytes = inputStream.readBytes()
+        val s3Object = s3.getObject(BUCKET_NAME, "${Constants.PUB_IMAGES}/$publicationId/$imageName.jpeg") ?: run {
+            call.respond(status = HttpStatusCode.BadRequest, message = "Image not found")
+            return@get
+        }
+        val bytes = s3Object.objectContent.readBytes()
 
         call.respondBytes(bytes, ContentType.Image.JPEG)
     }

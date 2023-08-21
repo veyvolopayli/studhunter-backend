@@ -19,4 +19,20 @@ data class Publication(
     val userId: String,
     val socials: String,
     val approved: Boolean? = null
-)
+) {
+    fun toMyPublication(views: Long, favorites: Long): MyPublication {
+        return MyPublication(
+            id = this.id,
+            imageUrl = this.imageUrl,
+            title = this.title,
+            description = this.description,
+            price = this.price,
+            priceType = this.priceType,
+            timestamp = this.timestamp,
+            userId = this.userId,
+            approved = this.approved,
+            views = views,
+            favorites = favorites
+        )
+    }
+}
