@@ -12,4 +12,8 @@ object Constants {
 
     const val AVATARS_PATH = "users/avatars/"
     const val JPEG = ".jpeg"
+
+    const val Y_CLOUD_PUB_IMAGES_PATH = "https://storage.yandexcloud.net/stud-hunter-bucket/publications/images/"
+
+    val cardImagePath : (pubID: String) -> String = { "$Y_CLOUD_PUB_IMAGES_PATH$it/0" }
 }

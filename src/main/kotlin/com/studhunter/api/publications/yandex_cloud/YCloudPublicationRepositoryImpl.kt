@@ -8,7 +8,7 @@ import java.io.File
 class YCloudPublicationRepositoryImpl(private val s3: AmazonS3) : YCloudPublicationsRepository {
 
     private val imagePathFor: (String, Int) -> String = { pubID, imageIndex ->
-        "publications/images/$pubID/image_$imageIndex.jpeg"
+        "publications/images/$pubID/$imageIndex"
     }
     override suspend fun insertPublicationImage(file: File, imageIndex: Int, pubId: String): Boolean {
         return try {

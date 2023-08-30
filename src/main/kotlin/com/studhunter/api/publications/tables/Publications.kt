@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 object Publications : Table(), PublicationsRepository {
     private val id = Publications.varchar("id", 36)
-    private val imageUrl = Publications.varchar("imageurl", 100)
+    private val imageUrl = Publications.varchar("imageurl", 120)
     private val title = Publications.varchar("title", 50)
     private val description = Publications.varchar("description", 1500)
     private val price = Publications.integer("price").nullable()

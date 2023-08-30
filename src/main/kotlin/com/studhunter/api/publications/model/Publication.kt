@@ -1,14 +1,17 @@
 package com.studhunter.api.publications.model
 
 import com.studhunter.api.common.Constants.HOST
+import com.studhunter.api.common.Constants.Y_CLOUD_PUB_IMAGES_PATH
+import com.studhunter.api.common.Constants.cardImagePath
 import io.ktor.util.date.*
 import kotlinx.serialization.Serializable
 import java.util.*
+//        "https://storage.yandexcloud.net/stud-hunter-bucket/publications/images/$pubID/image_$imageIndex"
 
 @Serializable
 data class Publication(
     val id: String = UUID.randomUUID().toString(),
-    val imageUrl: String = "$HOST/image/$id/image_0",
+    val imageUrl: String = cardImagePath(id),
     val title: String,
     val description: String,
     val price: Int?,

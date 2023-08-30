@@ -67,14 +67,33 @@ object Chats : Table() {
         }
     }
 
-    fun fetchChatID(publicationID: String, userID: String): String? {
+    fun fetchChat(publicationID: String, userID: String): Chat? {
         return try {
             transaction {
                 val row = select { publicationId.eq(publicationID) and customerId.eq(userID) }.first()
-                row[chatId]
+                Chat(
+                    id = row[chatId],
+                    publicationId = row[publicationId],
+                    sellerId = row[sellerId],
+                    customerId = row[customerId],
+                    lastMessage = row[lastMessage],
+                    timestamp = row[timestamp]
+                )
             }
         } catch (e: Exception) {
             null
         }
     }
+
+    /*fun closeChat(chatID: String): Boolean? {
+        return try {
+            transaction {
+                update( { chatId.eq(chatID) } ) {
+                    it[active] = false
+                } > 0
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }*/
 }
