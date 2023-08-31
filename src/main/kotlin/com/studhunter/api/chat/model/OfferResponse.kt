@@ -5,5 +5,5 @@ data class OfferResponse(
     val chatID: String,
     val timestamp: Long,
     val accepted: Boolean,
-    val userID: String
+    val requestID: String
 )

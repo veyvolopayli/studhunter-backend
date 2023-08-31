@@ -15,7 +15,7 @@ fun getTextFrameType(frame: Frame.Text): TextFrameType {
     } catch (_: Exception) { }
     try {
         val offerRequest = Json.decodeFromString<OfferRequest>(jsonString)
-        return TextFrameType.TOffer(offerRequest)
+        return TextFrameType.TOfferRequest(offerRequest)
     } catch (_: Exception) { }
     try {
         val offerResponse = Json.decodeFromString<OfferResponse>(jsonString)

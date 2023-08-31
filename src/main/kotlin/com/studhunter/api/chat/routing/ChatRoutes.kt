@@ -4,7 +4,9 @@ import com.studhunter.api.chat.features.TextFrameType
 import com.studhunter.api.chat.features.getTextFrameType
 import com.studhunter.api.chat.model.*
 import com.studhunter.api.chat.tables.Chats
+import com.studhunter.api.chat.tables.Tasks
 import com.studhunter.api.chat.tables.UserChatMessages
+import com.studhunter.api.common.convertDaysToMillis
 import com.studhunter.api.features.getAuthenticatedUserID
 import com.studhunter.api.publications.tables.Publications
 import io.ktor.http.*
@@ -18,9 +20,11 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
+import kotlin.collections.LinkedHashMap
 
 fun Route.chatRoutes() {
     val connections = Collections.synchronizedMap<String, MutableSet<Connection>>(LinkedHashMap())
+    val offerRequests = Collections.synchronizedMap<String, OfferRequest>(LinkedHashMap())
 
     authenticate {
         webSocket("/chat") {
@@ -65,7 +69,7 @@ fun Route.chatRoutes() {
                     for (frame in incoming) {
                         frame as? Frame.Text ?: continue
 
-                        when(val frameType = getTextFrameType(frame)) {
+                        when (val frameType = getTextFrameType(frame)) {
                             is TextFrameType.TMessage -> {
                                 val messageDTO = frameType.data as? MessageDTO ?: continue
                                 val message = messageDTO.toMessage(chatID = chatID, fromID = currentUserId)
@@ -80,22 +84,31 @@ fun Route.chatRoutes() {
                                     connection.session.send(Frame.Text(Json.encodeToString(message)))
                                 }
                             }
-                            is TextFrameType.TOffer -> {
+
+                            is TextFrameType.TOfferRequest -> {
                                 val offerRequest = frameType.data as? OfferRequest ?: continue
-                                if (offerRequest.userID == chat.sellerId) {
-                                    connections[chatID]?.forEach { connection ->
-                                        connection.session.send(Frame.Text(Json.encodeToString(offerRequest)))
-                                    }
+                                if (currentUserId == chat.sellerId) {
+                                    offerRequests[chatID] = offerRequest
+
                                 }
                             }
+
                             is TextFrameType.TOfferResponse -> {
                                 val offerResponse = frameType.data as? OfferResponse ?: continue
-                                if (offerResponse.userID == chat.customerId) {
-                                    connections[chatID]?.forEach { connection ->
-                                        connection.session.send(Frame.Text(Json.encodeToString(offerResponse)))
+                                if (currentUserId == chat.customerId) {
+                                    if (offerRequests[chatID]?.id == offerResponse.requestID) {
+                                        val task = Task(
+                                            executorID = chat.sellerId,
+                                            customerID = chat.customerId,
+                                            publicationID = "",
+                                            chatID = chatID,
+                                            deadlineTimestamp = convertDaysToMillis(4)
+                                        )
+                                        Tasks.insertTask(task)
                                     }
                                 }
                             }
+
                             is TextFrameType.TOther -> {
                                 continue
                             }

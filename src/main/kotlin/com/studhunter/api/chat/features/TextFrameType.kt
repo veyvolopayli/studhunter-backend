@@ -6,7 +6,7 @@ import com.studhunter.api.chat.model.OfferResponse
 
 sealed class TextFrameType(val data: Any) {
     class TMessage(data: MessageDTO) : TextFrameType(data)
-    class TOffer(data: OfferRequest) : TextFrameType(data)
+    class TOfferRequest(data: OfferRequest) : TextFrameType(data)
     class TOfferResponse(data: OfferResponse) : TextFrameType(data)
     class TOther(data: Unit) : TextFrameType(data)
 }
