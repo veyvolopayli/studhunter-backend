@@ -86,25 +86,34 @@ fun Route.chatRoutes() {
                             }
 
                             is TextFrameType.TOfferRequest -> {
-                                val offerRequest = frameType.data as? OfferRequest ?: continue
+                                val offerRequestDTO = frameType.data as? OfferRequestDTO ?: continue
                                 if (currentUserId == chat.sellerId) {
+                                    val offerRequest = offerRequestDTO.toOfferRequest(chatID = chatID)
                                     offerRequests[chatID] = offerRequest
-
+                                    connections[chatID]?.forEach { connection ->
+                                        if (connection.userID == chat.sellerId) {
+                                            connection.session.send(Frame.Text(Json.encodeToString(offerRequest)))
+                                        }
+                                    }
                                 }
                             }
 
                             is TextFrameType.TOfferResponse -> {
-                                val offerResponse = frameType.data as? OfferResponse ?: continue
+                                val offerResponseDTO = frameType.data as? OfferResponseDTO ?: continue
                                 if (currentUserId == chat.customerId) {
+                                    if (offerRequests[chatID] == null) continue
+                                    val offerResponse = offerResponseDTO.toOfferResponse(chatID = chatID, requestID = offerRequests[chatID]!!.id)
                                     if (offerRequests[chatID]?.id == offerResponse.requestID) {
-                                        val task = Task(
-                                            executorID = chat.sellerId,
-                                            customerID = chat.customerId,
-                                            publicationID = "",
-                                            chatID = chatID,
-                                            deadlineTimestamp = convertDaysToMillis(4)
-                                        )
-                                        Tasks.insertTask(task)
+                                        if (offerResponse.accepted) {
+                                            val task = Task(
+                                                executorID = chat.sellerId,
+                                                customerID = chat.customerId,
+                                                publicationID = chat.publicationId,
+                                                chatID = chatID,
+                                                deadlineTimestamp = convertDaysToMillis(4)
+                                            )
+                                            Tasks.insertTask(task)
+                                        }
                                     }
                                 }
                             }

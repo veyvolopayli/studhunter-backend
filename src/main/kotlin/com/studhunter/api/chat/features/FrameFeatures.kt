@@ -1,8 +1,6 @@
 package com.studhunter.api.chat.features
 
-import com.studhunter.api.chat.model.MessageDTO
-import com.studhunter.api.chat.model.OfferRequest
-import com.studhunter.api.chat.model.OfferResponse
+import com.studhunter.api.chat.model.*
 import io.ktor.websocket.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -14,11 +12,11 @@ fun getTextFrameType(frame: Frame.Text): TextFrameType {
         return TextFrameType.TMessage(messageDTO)
     } catch (_: Exception) { }
     try {
-        val offerRequest = Json.decodeFromString<OfferRequest>(jsonString)
+        val offerRequest = Json.decodeFromString<OfferRequestDTO>(jsonString)
         return TextFrameType.TOfferRequest(offerRequest)
     } catch (_: Exception) { }
     try {
-        val offerResponse = Json.decodeFromString<OfferResponse>(jsonString)
+        val offerResponse = Json.decodeFromString<OfferResponseDTO>(jsonString)
         return TextFrameType.TOfferResponse(offerResponse)
     } catch (_: Exception) { }
     return TextFrameType.TOther(Unit)
