@@ -1,6 +1,7 @@
 package com.studhunter.api.publications.routing
 
 import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.model.DeleteObjectRequest
 import com.studhunter.BUCKET_NAME
 import com.studhunter.api.common.Constants
 import com.studhunter.api.common.tables.Categories
@@ -10,6 +11,7 @@ import com.studhunter.api.features.deleteFile
 import com.studhunter.api.features.getAuthenticatedUserID
 import com.studhunter.api.features.toCompressedImage
 import com.studhunter.api.features.toCompressedImageFile
+import com.studhunter.api.publications.model.DetailedPublication
 import com.studhunter.api.publications.model.Publication
 import com.studhunter.api.publications.repository.PublicationsRepository
 import com.studhunter.api.publications.repository.YCloudPublicationsRepository
@@ -40,11 +42,29 @@ fun Route.getPublicationRoutes() {
                 return@get
             }
 
+            val currentUserID = call.getAuthenticatedUserID() ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "Invalid JWT")
+                return@get
+            }
+
             val publication = Publications.getPublication(id = id) ?: kotlin.run {
                 call.respond(status = HttpStatusCode.BadRequest, message = "Publication does not exist")
                 return@get
             }
-            call.respond(status = HttpStatusCode.OK, message = publication)
+
+            val user = Users.getUserById(publication.userId) ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "User that have created publication is deleted from the platform")
+                Publications.deleteUserPublications(publication.userId)
+                return@get
+            }
+
+            val detailedPublication = DetailedPublication(
+                publication = publication,
+                user = user,
+                userIsOwner = currentUserID == user.id
+            )
+
+            call.respond(status = HttpStatusCode.OK, message = detailedPublication)
 
             val userID = call.getAuthenticatedUserID() ?: return@get
             PublicationViews.insertView(id, userID)

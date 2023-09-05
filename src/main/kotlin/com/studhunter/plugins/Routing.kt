@@ -3,6 +3,7 @@ package com.studhunter.plugins
 import com.amazonaws.services.s3.AmazonS3
 import com.studhunter.api.auth.routes.*
 import com.studhunter.api.chat.routing.chatRoutes
+import com.studhunter.api.chat.routing.normalChatRoutes
 import com.studhunter.api.email.routes.emailRouting
 import com.studhunter.api.email.service.EmailService
 import com.studhunter.api.publications.repository.PublicationsRepository
@@ -48,7 +49,8 @@ fun Application.configureRouting(
         publicationOperationRoutes()
         emailRouting()
         updateRoutes(ycUpdateRepository)
-        chatRoutes()
+//        chatRoutes()
+        normalChatRoutes()
 
         get("/") {
             call.respond(

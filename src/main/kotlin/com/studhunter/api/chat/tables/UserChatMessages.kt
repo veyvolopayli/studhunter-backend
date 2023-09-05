@@ -23,7 +23,7 @@ object UserChatMessages : Table("user_chat_messages"), UserChatRepository {
                     it[timestamp] = message.timestamp
                     it[messageBody] = message.messageBody
                     it[chatId] = message.chatId
-                    it[type] = message.type
+                    it[type] = message.messageType
                 }
             }
             message.id
@@ -43,7 +43,7 @@ object UserChatMessages : Table("user_chat_messages"), UserChatRepository {
                         timestamp = row[timestamp],
                         messageBody = row[messageBody],
                         chatId = row[UserChatMessages.chatId],
-                        type = row[type]
+                        messageType = row[type]
                     )
                 }
             }

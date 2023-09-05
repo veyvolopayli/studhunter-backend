@@ -9,6 +9,6 @@ data class Chat(
     val publicationId: String,
     val customerId: String,
     val sellerId: String,
-    val lastMessage: String,
+    var lastMessage: String,
     val timestamp: Long = getTimeMillis()
 )

@@ -224,4 +224,16 @@ object Publications : Table(), PublicationsRepository {
         }
     }
 
+    override fun deleteUserPublications(userID: String): Int? {
+        return try {
+            transaction {
+                deleteWhere {
+                    this.userId.eq(userID)
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
 }

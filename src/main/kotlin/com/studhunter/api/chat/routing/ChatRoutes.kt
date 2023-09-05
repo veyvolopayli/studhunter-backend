@@ -104,7 +104,7 @@ fun Route.chatRoutes() {
                                     if (offerRequests[chatID] == null) continue
                                     val offerResponse = offerResponseDTO.toOfferResponse(chatID = chatID, requestID = offerRequests[chatID]!!.id)
                                     if (offerRequests[chatID]?.id == offerResponse.requestID) {
-                                        if (offerResponse.accepted) {
+                                        if (offerResponse.positive) {
                                             val task = Task(
                                                 executorID = chat.sellerId,
                                                 customerID = chat.customerId,

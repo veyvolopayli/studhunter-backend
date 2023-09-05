@@ -13,4 +13,5 @@ interface PublicationsRepository {
     fun getClosestPublications(district: String): List<Publication>?
     fun updatePublicationStatus(pubId: String, approve: Boolean): Boolean?
     fun deletePublication(publicationId: String): Int?
+    fun deleteUserPublications(userID: String): Int?
 }
