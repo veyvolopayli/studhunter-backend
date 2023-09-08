@@ -1,6 +1,5 @@
 package com.studhunter.api.users.routing
 
-import com.amazonaws.AmazonServiceException
 import com.amazonaws.services.s3.AmazonS3
 import com.studhunter.BUCKET_NAME
 import com.studhunter.api.common.tables.Universities
@@ -10,7 +9,7 @@ import com.studhunter.api.publications.tables.Publications
 import com.studhunter.api.users.repository.UsersRepository
 import com.studhunter.api.users.responses.UserResponse
 import com.studhunter.api.users.responses.toShortUserResponse
-import com.studhunter.api.users.tables.FavoritePublications
+import com.studhunter.api.favorites.tables.FavoritePublications
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -24,8 +23,6 @@ import com.studhunter.api.common.Constants
 import com.studhunter.api.features.toCompressedImageFile
 import com.studhunter.api.users.requests.EditProfileRequest
 import com.studhunter.api.users.tables.Users
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.singleOrNull
 
 fun Route.userRouting(userRepository: UsersRepository, s3: AmazonS3) {
 

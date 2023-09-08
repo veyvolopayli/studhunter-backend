@@ -1,7 +1,6 @@
 package com.studhunter.api.publications.routing
 
 import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.DeleteObjectRequest
 import com.studhunter.BUCKET_NAME
 import com.studhunter.api.common.Constants
 import com.studhunter.api.common.tables.Categories
@@ -9,18 +8,16 @@ import com.studhunter.api.common.tables.Districts
 import com.studhunter.api.common.tables.PriceTypes
 import com.studhunter.api.features.deleteFile
 import com.studhunter.api.features.getAuthenticatedUserID
-import com.studhunter.api.features.toCompressedImage
 import com.studhunter.api.features.toCompressedImageFile
 import com.studhunter.api.publications.model.DetailedPublication
 import com.studhunter.api.publications.model.Publication
-import com.studhunter.api.publications.repository.PublicationsRepository
 import com.studhunter.api.publications.repository.YCloudPublicationsRepository
 import com.studhunter.api.publications.requests.ApprovePublicationRequest
 import com.studhunter.api.publications.requests.FavoritePubRequest
 import com.studhunter.api.publications.requests.PublicationRequest
 import com.studhunter.api.publications.tables.PublicationViews
 import com.studhunter.api.publications.tables.Publications
-import com.studhunter.api.users.tables.FavoritePublications
+import com.studhunter.api.favorites.tables.FavoritePublications
 import com.studhunter.api.users.tables.Users
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -268,7 +265,7 @@ fun Route.postPublicationRoutes(yCloudPublicationsRepository: YCloudPublications
 
         }
 
-        post("favorites/publication/add") {
+        /*post("favorites/publication/add") {
             val request = call.receiveNullable<FavoritePubRequest>() ?: kotlin.run {
                 call.respond(HttpStatusCode.BadRequest)
                 return@post
@@ -285,9 +282,9 @@ fun Route.postPublicationRoutes(yCloudPublicationsRepository: YCloudPublications
             }
 
             call.respond(HttpStatusCode.OK)
-        }
+        }*/
 
-        get("favorites/publication/{id}/check") {
+        /*get("favorites/publication/{id}/check") {
             val userID = call.getAuthenticatedUserID() ?: run {
                 call.respond(status = HttpStatusCode.Unauthorized, "token is not valid")
                 return@get
@@ -320,7 +317,7 @@ fun Route.postPublicationRoutes(yCloudPublicationsRepository: YCloudPublications
             }
 
             call.respond(HttpStatusCode.OK)
-        }
+        }*/
 
         post("publications/favorites/remove-all") {
 

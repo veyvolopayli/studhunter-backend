@@ -1,5 +1,6 @@
-package com.studhunter.api.users.tables
+package com.studhunter.api.favorites.tables
 
+import com.studhunter.api.favorites.model.FavoritePublication
 import com.studhunter.api.publications.model.Publication
 import com.studhunter.api.publications.tables.Publications
 import com.studhunter.api.users.repository.FavoritePublicationsRepository
@@ -80,6 +81,22 @@ object FavoritePublications : Table("favorite_publications"), FavoritePublicatio
             }
             true
         } catch (e: ExposedSQLException) {
+            null
+        }
+    }
+
+    fun getAllFavorites(): Map<String, FavoritePublication>? {
+        return try {
+            transaction {
+                selectAll().associate {
+                    it[favoritePubId].dropLast(18) + it[userId].dropLast(18) to FavoritePublication(
+                        favoritePubID = it[favoritePubId],
+                        userID = it[userId],
+                        timestamp = it[timestamp]
+                    )
+                }
+            }
+        } catch (e: Exception) {
             null
         }
     }
