@@ -13,7 +13,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object FavoritePublications : Table("favorite_publications"), FavoritePublicationsRepository {
     private val userId = varchar("user_id", 36)
     private val favoritePubId = varchar("publication_id", 36)
-    private val timestamp = long("timestamp")
 
     override fun fetchFavorites(uid: String): List<Publication> {
         return try {
@@ -54,7 +53,6 @@ object FavoritePublications : Table("favorite_publications"), FavoritePublicatio
                 insertIgnore {
                     it[userId] = uid
                     it[favoritePubId] = publicationId
-                    it[timestamp] = getTimeMillis()
                 }.insertedCount != 0
             }
         } catch (e: ExposedSQLException) {
@@ -85,14 +83,13 @@ object FavoritePublications : Table("favorite_publications"), FavoritePublicatio
         }
     }
 
-    fun getAllFavorites(): Map<String, FavoritePublication>? {
+    fun getAllFavorites(): List<FavoritePublication>? {
         return try {
             transaction {
-                selectAll().associate {
-                    it[favoritePubId].dropLast(18) + it[userId].dropLast(18) to FavoritePublication(
+                selectAll().map {
+                    FavoritePublication(
                         favoritePubID = it[favoritePubId],
-                        userID = it[userId],
-                        timestamp = it[timestamp]
+                        userID = it[userId]
                     )
                 }
             }

@@ -1,5 +1,7 @@
 package com.studhunter.api.favorites.routing
 
+import com.studhunter.api.common.convertHoursToMillis
+import com.studhunter.api.common.startTask
 import com.studhunter.api.favorites.model.FavoritePublication
 import com.studhunter.api.favorites.tables.FavoritePublications
 import com.studhunter.api.features.getAuthenticatedUserID
@@ -10,12 +12,22 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.collections.LinkedHashMap
 
 fun Route.favoritePublicationRoutes() {
-    val allFetchedFavorites = FavoritePublications.getAllFavorites() ?: emptyMap()
-    val allFavorites = Collections.synchronizedMap<String, FavoritePublication>(LinkedHashMap()).also { it.putAll(allFetchedFavorites) }
+    val allFetchedFavorites = FavoritePublications.getAllFavorites() ?: emptySet()
+    val allFavorites = Collections.synchronizedSet<FavoritePublication>(LinkedHashSet()).also { it.addAll(allFetchedFavorites) }
+
+    CoroutineScope(Dispatchers.Default).launch {
+        startTask(convertHoursToMillis(1)) {
+
+        }
+    }
 
     authenticate {
         post("favorites/publication/add") {
@@ -34,10 +46,9 @@ fun Route.favoritePublicationRoutes() {
                 return@post
             }*/
 
-            val key = request.publicationId.dropLast(18) + userID.dropLast(18)
-            allFavorites[key] = FavoritePublication(userID = userID, favoritePubID = request.publicationId)
+            val isSuccessful = allFavorites.add(FavoritePublication(userID = userID, favoritePubID = request.publicationId))
 
-            call.respond(HttpStatusCode.OK)
+            call.respond(status = HttpStatusCode.OK, message = isSuccessful)
         }
 
         post("favorites/publication/remove-single") {
@@ -56,7 +67,9 @@ fun Route.favoritePublicationRoutes() {
                 return@post
             }*/
 
-            call.respond(HttpStatusCode.OK)
+            val isSuccessful = allFavorites.remove(FavoritePublication(userID = userId, favoritePubID = request.publicationId))
+
+            call.respond(status = HttpStatusCode.OK, message = isSuccessful)
         }
 
         get("favorites/publication/{id}/check") {
@@ -73,7 +86,7 @@ fun Route.favoritePublicationRoutes() {
                 return@get
             }*/
 
-            val isFavorite = allFavorites.
+            val isFavorite = allFavorites.contains(FavoritePublication(userID, pubID))
 
             call.respond(status = HttpStatusCode.OK, message = isFavorite)
         }

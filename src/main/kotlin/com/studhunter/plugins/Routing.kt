@@ -6,6 +6,7 @@ import com.studhunter.api.chat.routing.chatRoutes
 import com.studhunter.api.chat.routing.normalChatRoutes
 import com.studhunter.api.email.routes.emailRouting
 import com.studhunter.api.email.service.EmailService
+import com.studhunter.api.favorites.routing.favoritePublicationRoutes
 import com.studhunter.api.publications.repository.PublicationsRepository
 import com.studhunter.api.publications.repository.YCloudPublicationsRepository
 import com.studhunter.api.publications.routing.*
@@ -51,6 +52,7 @@ fun Application.configureRouting(
         updateRoutes(ycUpdateRepository)
 //        chatRoutes()
         normalChatRoutes()
+        favoritePublicationRoutes()
 
         get("/") {
             call.respond(
