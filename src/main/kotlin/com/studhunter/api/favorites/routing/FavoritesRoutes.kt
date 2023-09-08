@@ -24,8 +24,8 @@ fun Route.favoritePublicationRoutes() {
     val allFavorites = Collections.synchronizedSet<FavoritePublication>(LinkedHashSet()).also { it.addAll(allFetchedFavorites) }
 
     CoroutineScope(Dispatchers.Default).launch {
-        startTask(convertHoursToMillis(1)) {
-
+        startTask(convertHoursToMillis(0.5.toLong())) {
+            FavoritePublications.synchronizeDatabaseWithList(allFavorites) ?: println("Ошибка")
         }
     }
 

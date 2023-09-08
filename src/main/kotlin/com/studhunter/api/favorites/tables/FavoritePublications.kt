@@ -98,4 +98,45 @@ object FavoritePublications : Table("favorite_publications"), FavoritePublicatio
         }
     }
 
+    private fun deleteFavorites(favoritesToRemove: Set<FavoritePublication>): Boolean? {
+        return try {
+            transaction {
+                favoritesToRemove.forEach { favorite ->
+                    deleteWhere { userId.eq(favorite.userID) and favoritePubId.eq(favorite.favoritePubID) }
+                }
+                true
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun insertFavorites(favorites: Set<FavoritePublication>): Boolean? {
+        return try {
+            transaction {
+                batchInsert(favorites) { favorite ->
+                    this[userId] = favorite.userID
+                    this[favoritePubId] = favorite.favoritePubID
+                }.isNotEmpty()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun synchronizeDatabaseWithList(favPublications: Set<FavoritePublication>): Boolean? {
+        val favoritesFromDB = getAllFavorites() ?: emptyList()
+
+        if (favPublications.isEmpty()) return true
+
+        val toDelete = favoritesFromDB.toSet() - favPublications
+        val toAdd = favPublications - favoritesFromDB.toSet()
+
+        deleteFavorites(toDelete)?.let {
+            insertFavorites(toAdd)
+        } ?: return null
+
+        return true
+    }
+
 }
