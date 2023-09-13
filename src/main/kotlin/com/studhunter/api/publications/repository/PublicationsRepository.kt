@@ -1,6 +1,7 @@
 package com.studhunter.api.publications.repository
 
 import com.studhunter.api.publications.model.Publication
+import com.studhunter.api.publications_filter.model.FilterRequest
 
 interface PublicationsRepository {
     fun insertPublication(publication: Publication): String?
@@ -14,4 +15,5 @@ interface PublicationsRepository {
     fun updatePublicationStatus(pubId: String, approve: Boolean): Boolean?
     fun deletePublication(publicationId: String): Int?
     fun deleteUserPublications(userID: String): Int?
+    fun getFilteredPublications(filter: FilterRequest): List<Publication>?
 }

@@ -52,6 +52,16 @@ object UserChatMessages : Table("user_chat_messages"), UserChatRepository {
         }
     }
 
+    fun getMessages(userId: String, publicationId: String): List<Message>? {
+        return try {
+            val chat = Chats.fetchChat(userID = userId, publicationID = publicationId) ?: return null
+            val messages = getMessages(chat.id) ?: emptyList()
+            messages
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     override fun deleteChat(chatId: String): Int? {
         return try {
             transaction {

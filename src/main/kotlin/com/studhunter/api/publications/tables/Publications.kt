@@ -2,6 +2,7 @@ package com.studhunter.api.publications.tables
 
 import com.studhunter.api.publications.model.Publication
 import com.studhunter.api.publications.repository.PublicationsRepository
+import com.studhunter.api.publications_filter.model.FilterRequest
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -233,6 +234,16 @@ object Publications : Table(), PublicationsRepository {
             }
         } catch (e: Exception) {
             null
+        }
+    }
+
+    override fun getFilteredPublications(filter: FilterRequest): List<Publication>? {
+        try {
+            transaction {
+                select { priceType.inList(filter.priceTypes ?: emptyList()) }
+            }
+        } catch (e: Exception) {
+
         }
     }
 

@@ -1,7 +1,9 @@
 package com.studhunter.api.chat.tables
 
 import com.studhunter.api.chat.model.Chat
+import com.studhunter.api.publications.tables.Publications
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Chats : Table() {
@@ -85,15 +87,45 @@ object Chats : Table() {
         }
     }
 
-    /*fun closeChat(chatID: String): Boolean? {
-        return try {
-            transaction {
-                update( { chatId.eq(chatID) } ) {
-                    it[active] = false
-                } > 0
+    fun getChatOrCreate(userId: String, publicationId: String): Chat? {
+        try {
+            return transaction {
+                val rows = select { customerId.eq(userId) and Chats.publicationId.eq(publicationId) }
+                if (rows.count().toInt() == 1) {
+                    val row = rows.single()
+                    return@transaction Chat(
+                        id = row[chatId],
+                        publicationId = row[Chats.publicationId],
+                        sellerId = row[sellerId],
+                        customerId = row[customerId],
+                        lastMessage = row[lastMessage],
+                        timestamp = row[timestamp]
+                    )
+                } else if (rows.count() < 1) {
+                    val publication = Publications.getPublication(publicationId) ?: return@transaction null
+
+                    val chat = Chat(
+                        publicationId = publicationId,
+                        sellerId = publication.userId,
+                        customerId = userId,
+                        lastMessage = ""
+                    )
+                    insert {
+                        it[chatId] = chat.id
+                        it[Chats.publicationId] = chat.publicationId
+                        it[sellerId] = chat.sellerId
+                        it[customerId] = chat.customerId
+                        it[lastMessage] = chat.lastMessage
+                        it[timestamp] = chat.timestamp
+                    }
+                    return@transaction chat
+                } else {
+                    deleteWhere { customerId.eq(userId) and Chats.publicationId.eq(publicationId) }
+                    return@transaction null
+                }
             }
         } catch (e: Exception) {
-            null
+            return null
         }
-    }*/
+    }
 }

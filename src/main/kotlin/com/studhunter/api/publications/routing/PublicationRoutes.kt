@@ -379,6 +379,8 @@ fun Route.publicationOperationRoutes() {
 
         }
     }
+
+
 }
 
 fun Route.imageRoutes(s3: AmazonS3) {

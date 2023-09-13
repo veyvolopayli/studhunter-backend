@@ -74,9 +74,9 @@ fun Route.normalChatRoutes() {
                 }
 
                 // Fetching messages that exists in chat that was found
-                UserChatMessages.getMessages(chatID)?.forEach { message ->
-                    send(Frame.Text(json.encodeToString(IncomingTextFrame(type = INCOMING_TYPE_MESSAGE, data = message))))
-                }
+//                UserChatMessages.getMessages(chatID)?.forEach { message ->
+//                    send(Frame.Text(json.encodeToString(IncomingTextFrame(type = INCOMING_TYPE_MESSAGE, data = message))))
+//                }
 
                 // Listen session incoming frames
                 try {
@@ -147,23 +147,15 @@ fun Route.normalChatRoutes() {
                 }
 
             } ?: pubIdParam?.let { pubID ->
-                val publication = Publications.getPublication(pubID) ?: run {
-                    call.respond(status = HttpStatusCode.BadRequest, message = "Publication not found")
+                //todo Тут мы получаем чат с помощью функции getChatOrCreate: Chat?
+
+                val chat = Chats.getChatOrCreate(userId = currentUserID, publicationId = pubID) ?: run {
+                    close()
+                    call.respond(status = HttpStatusCode.Conflict, "Terrible error was occurred")
                     return@webSocket
                 }
 
                 val thisConnection = Connection(currentUserID, this)
-
-                val chat = Chats.fetchChat(publicationID = pubID, userID = currentUserID) ?: run {
-                    val chat = Chat(
-                        publicationId = pubID,
-                        customerId = currentUserID,
-                        sellerId = publication.userId,
-                        lastMessage = ""
-                    )
-                    Chats.insertChat(chat)
-                    chat
-                }
 
                 val chatConnections = connections.getOrPut(chat.id) {
                     mutableSetOf()
@@ -172,9 +164,34 @@ fun Route.normalChatRoutes() {
                     it.add(thisConnection)
                 }
 
-                UserChatMessages.getMessages(chat.id)?.forEach { message ->
+//                val publication = Publications.getPublication(pubID) ?: run {
+//                    call.respond(status = HttpStatusCode.BadRequest, message = "Publication not found")
+//                    return@webSocket
+//                }
+//
+//                val thisConnection = Connection(currentUserID, this)
+//
+//                val chat = Chats.fetchChat(publicationID = pubID, userID = currentUserID) ?: run {
+//                    val chat = Chat(
+//                        publicationId = pubID,
+//                        customerId = currentUserID,
+//                        sellerId = publication.userId,
+//                        lastMessage = ""
+//                    )
+//                    Chats.insertChat(chat)
+//                    chat
+//                }
+//
+//                val chatConnections = connections.getOrPut(chat.id) {
+//                    mutableSetOf()
+//                }
+//                connections[chat.id] = chatConnections.also {
+//                    it.add(thisConnection)
+//                }
+
+                /*UserChatMessages.getMessages(chat.id)?.forEach { message ->
                     send(Frame.Text(json.encodeToString(IncomingTextFrame(type = INCOMING_TYPE_MESSAGE, data = message))))
-                }
+                }*/
 
                 try {
                     for (frame in incoming) {
@@ -262,6 +279,34 @@ fun Route.normalChatRoutes() {
                 return@get
             }
             call.respond(status = HttpStatusCode.OK, chats)
+        }
+
+        get("chat/by-chat_id/{chatID}/messages") {
+            val chatID = call.parameters["chatID"] ?: run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            val messages = UserChatMessages.getMessages(chatID) ?: run {
+                call.respond(status = HttpStatusCode.Conflict, "Failed to fetch messages")
+                return@get
+            }
+            call.respond(status = HttpStatusCode.OK, message = messages)
+        }
+
+        get("chat/by-publication_id/{pubID}/messages") {
+            val pubID = call.parameters["pubID"] ?: run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            val currentUserId = call.getAuthenticatedUserID() ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "JWT exception was occurred")
+                return@get
+            }
+            val messages = UserChatMessages.getMessages(userId = currentUserId, publicationId = pubID) ?: run {
+                call.respond(status = HttpStatusCode.Conflict, "Failed to fetch messages")
+                return@get
+            }
+            call.respond(status = HttpStatusCode.OK, message = messages)
         }
     }
 }
