@@ -154,22 +154,23 @@ object Publications : Table(), PublicationsRepository {
         return try {
             val lowerQuery = query.lowercase()
             transaction {
-                Publications.select { (title.lowerCase() like "%$lowerQuery%") or (description.lowerCase() like "%$lowerQuery%") }.map { row ->
-                    Publication(
-                        id = row[Publications.id],
-                        imageUrl = row[imageUrl],
-                        title = row[title],
-                        description = row[description],
-                        price = row[price],
-                        priceType = row[priceType],
-                        district = row[district],
-                        timestamp = row[timestamp],
-                        category = row[category],
-                        userId = row[userId],
-                        socials = row[socials],
-                        approved = row[approved]
-                    )
-                }.sortedBy { it.timestamp }
+                Publications.select { (title.lowerCase() like "%$lowerQuery%") or (description.lowerCase() like "%$lowerQuery%") }
+                    .map { row ->
+                        Publication(
+                            id = row[Publications.id],
+                            imageUrl = row[imageUrl],
+                            title = row[title],
+                            description = row[description],
+                            price = row[price],
+                            priceType = row[priceType],
+                            district = row[district],
+                            timestamp = row[timestamp],
+                            category = row[category],
+                            userId = row[userId],
+                            socials = row[socials],
+                            approved = row[approved]
+                        )
+                    }.sortedBy { it.timestamp }
             }
         } catch (e: Exception) {
             null
@@ -205,12 +206,14 @@ object Publications : Table(), PublicationsRepository {
     override fun updatePublicationStatus(pubId: String, approve: Boolean): Boolean? {
         return try {
             transaction {
-                Publications.update ({ Publications.id.eq(pubId) }) {
+                Publications.update({ Publications.id.eq(pubId) }) {
                     it[approved] = approve
                 }
             }
             return approve
-        } catch (e: Exception) { null }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     override fun deletePublication(publicationId: String): Int? {
@@ -238,12 +241,69 @@ object Publications : Table(), PublicationsRepository {
     }
 
     override fun getFilteredPublications(filter: FilterRequest): List<Publication>? {
-        try {
+        if (filter.priceTypes.isNullOrEmpty() && filter.maxPrice == null && filter.minPrice == null && filter.categories.isNullOrEmpty() && filter.districts.isNullOrEmpty() && filter.minUserRating == null) {
+            return getAllPublications()
+        }
+
+        return try {
             transaction {
-                select { priceType.inList(filter.priceTypes ?: emptyList()) }
+                // Базовый запрос для таблицы publications
+                val query = Publications
+                    .select { Publications.approved.eq(true) or approved.eq(false) }
+
+                // Фильтрация по минимальной цене, если указана
+                filter.minPrice?.let { minPrice ->
+                    query.andWhere { Publications.price.greaterEq(minPrice) }
+                }
+
+                // Фильтрация по максимальной цене, если указана
+                filter.maxPrice?.let { maxPrice ->
+                    query.andWhere { Publications.price.lessEq(maxPrice) }
+                }
+
+                // Фильтрация по типам цен, если указаны
+                filter.priceTypes?.let { priceTypes ->
+                    query.andWhere { Publications.priceType.inList(priceTypes) }
+                }
+
+                // Фильтрация по районам, если указаны
+                filter.districts?.let { districts ->
+                    query.andWhere { Publications.district.inList(districts) }
+                }
+
+                // Фильтрация по категориям, если указаны
+                filter.categories?.let { categories ->
+                    query.andWhere { Publications.category.inList(categories) }
+                }
+
+                // Дополнительная фильтрация по минимальному рейтингу пользователя, если указан
+//            filter.minUserRating?.let { minUserRating ->
+//                query.andWhere {  }
+//            }
+
+                // Выполнение запроса и преобразование результатов в список объектов Publication
+                val result = query
+                    .map {
+                        Publication(
+                            it[Publications.id],
+                            it[Publications.imageUrl],
+                            it[Publications.title],
+                            it[Publications.description],
+                            it[Publications.price],
+                            it[Publications.priceType],
+                            it[Publications.district],
+                            it[Publications.timestamp],
+                            it[Publications.category],
+                            it[Publications.userId],
+                            it[Publications.socials],
+                            it[Publications.approved]
+                        )
+                    }
+
+                return@transaction result
             }
         } catch (e: Exception) {
-
+            null
         }
     }
 

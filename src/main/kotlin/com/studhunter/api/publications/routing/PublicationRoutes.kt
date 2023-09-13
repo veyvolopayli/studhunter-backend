@@ -18,6 +18,7 @@ import com.studhunter.api.publications.requests.PublicationRequest
 import com.studhunter.api.publications.tables.PublicationViews
 import com.studhunter.api.publications.tables.Publications
 import com.studhunter.api.favorites.tables.FavoritePublications
+import com.studhunter.api.publications_filter.model.FilterRequest
 import com.studhunter.api.users.tables.Users
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -378,6 +379,18 @@ fun Route.publicationOperationRoutes() {
             call.respond(status = HttpStatusCode.OK, message = "Success\nApproved: ${request.approved}")
 
         }
+    }
+
+    get("publications/filtered") {
+        val filter = call.receiveNullable<FilterRequest>() ?: run {
+            call.respond(HttpStatusCode.BadRequest)
+            return@get
+        }
+        val filteredPublications = Publications.getFilteredPublications(filter = filter) ?: run {
+            call.respond(status = HttpStatusCode.Conflict, "Database exception")
+            return@get
+        }
+        call.respond(status = HttpStatusCode.OK, message = filteredPublications)
     }
 
 
