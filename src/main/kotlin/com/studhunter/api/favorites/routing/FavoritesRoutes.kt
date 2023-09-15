@@ -1,6 +1,7 @@
 package com.studhunter.api.favorites.routing
 
 import com.studhunter.api.common.convertHoursToMillis
+import com.studhunter.api.common.convertMinutesToMillis
 import com.studhunter.api.common.startTask
 import com.studhunter.api.favorites.model.FavoritePublication
 import com.studhunter.api.favorites.tables.FavoritePublications
@@ -24,7 +25,7 @@ fun Route.favoritePublicationRoutes() {
     val allFavorites = Collections.synchronizedSet<FavoritePublication>(LinkedHashSet()).also { it.addAll(allFetchedFavorites) }
 
     CoroutineScope(Dispatchers.Default).launch {
-        startTask(convertHoursToMillis(0.5.toLong())) {
+        startTask(convertMinutesToMillis(30)) {
             FavoritePublications.synchronizeDatabaseWithList(allFavorites) ?: println("Ошибка")
         }
     }
