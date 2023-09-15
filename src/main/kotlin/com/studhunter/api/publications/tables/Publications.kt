@@ -1,8 +1,10 @@
 package com.studhunter.api.publications.tables
 
+import com.studhunter.api.common.nullifyEmptyList
 import com.studhunter.api.publications.model.Publication
 import com.studhunter.api.publications.repository.PublicationsRepository
 import com.studhunter.api.publications_filter.model.FilterRequest
+import com.studhunter.api.users.tables.Users
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -247,58 +249,52 @@ object Publications : Table(), PublicationsRepository {
 
         return try {
             transaction {
-                // Базовый запрос для таблицы publications
-                val query = Publications
-                    .select { Publications.approved.eq(true) or approved.eq(false) }
 
-                // Фильтрация по минимальной цене, если указана
-                filter.minPrice?.let { minPrice ->
-                    query.andWhere { Publications.price.greaterEq(minPrice) }
-                }
+                val condition = userId eq Users.userId
 
-                // Фильтрация по максимальной цене, если указана
-                filter.maxPrice?.let { maxPrice ->
-                    query.andWhere { Publications.price.lessEq(maxPrice) }
-                }
+                val result = join(Users, JoinType.INNER, additionalConstraint = { condition }).select {
+                    approved.eq(true) or approved.eq(false) or approved.eq(null)
 
-                // Фильтрация по типам цен, если указаны
-                filter.priceTypes?.let { priceTypes ->
-                    query.andWhere { Publications.priceType.inList(priceTypes) }
-                }
-
-                // Фильтрация по районам, если указаны
-                filter.districts?.let { districts ->
-                    query.andWhere { Publications.district.inList(districts) }
-                }
-
-                // Фильтрация по категориям, если указаны
-                filter.categories?.let { categories ->
-                    query.andWhere { Publications.category.inList(categories) }
-                }
-
-                // Дополнительная фильтрация по минимальному рейтингу пользователя, если указан
-//            filter.minUserRating?.let { minUserRating ->
-//                query.andWhere {  }
-//            }
-
-                // Выполнение запроса и преобразование результатов в список объектов Publication
-                val result = query
-                    .map {
-                        Publication(
-                            it[Publications.id],
-                            it[Publications.imageUrl],
-                            it[Publications.title],
-                            it[Publications.description],
-                            it[Publications.price],
-                            it[Publications.priceType],
-                            it[Publications.district],
-                            it[Publications.timestamp],
-                            it[Publications.category],
-                            it[Publications.userId],
-                            it[Publications.socials],
-                            it[Publications.approved]
-                        )
+                }.also { q ->
+                    filter.minUserRating?.let { minRating ->
+                        q.andWhere { Users.rating.greaterEq(minRating.toDouble()) }
                     }
+
+                    filter.minPrice?.let { minPrice ->
+                        q.andWhere { price.greaterEq(minPrice) }
+                    }
+
+                    filter.maxPrice?.let { maxPrice ->
+                        q.andWhere { price.lessEq(maxPrice) }
+                    }
+
+                    filter.priceTypes?.nullifyEmptyList()?.let { priceTypes ->
+                        q.andWhere { priceType.inList(priceTypes) }
+                    }
+
+                    filter.districts?.nullifyEmptyList()?.let { districts ->
+                        q.andWhere { district.inList(districts) }
+                    }
+
+                    filter.categories?.nullifyEmptyList()?.let { categories ->
+                        q.andWhere { category.inList(categories) }
+                    }
+                }.map {
+                    Publication(
+                        it[Publications.id],
+                        it[Publications.imageUrl],
+                        it[Publications.title],
+                        it[Publications.description],
+                        it[Publications.price],
+                        it[Publications.priceType],
+                        it[Publications.district],
+                        it[Publications.timestamp],
+                        it[Publications.category],
+                        it[Publications.userId],
+                        it[Publications.socials],
+                        it[Publications.approved]
+                    )
+                }
 
                 return@transaction result
             }
