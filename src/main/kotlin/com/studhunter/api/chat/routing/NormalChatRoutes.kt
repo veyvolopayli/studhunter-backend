@@ -269,6 +269,10 @@ fun Route.normalChatRoutes() {
             } ?: call.respond(status = HttpStatusCode.BadRequest, message = "Chat ID or publication ID required")
         }
 
+        webSocket {
+
+        }
+
         get("chats/get") {
             val userID = call.getAuthenticatedUserID() ?: run {
                 call.respond(HttpStatusCode.Unauthorized)

@@ -4,10 +4,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FilterRequest(
-    val minPrice: Int?,
-    val maxPrice: Int?,
-    val priceTypes: List<String>?,
-    val districts: List<String>?,
-    val categories: List<String>?,
-    val minUserRating: Int?,
+    val minPrice: Int? = null,
+    val maxPrice: Int? = null,
+    val priceTypes: List<String>? = null,
+    val districts: List<String>? = null,
+    val categories: List<String>? = null,
+    val minUserRating: Int? = null,
 )

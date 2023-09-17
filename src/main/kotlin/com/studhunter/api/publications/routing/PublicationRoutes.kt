@@ -381,18 +381,17 @@ fun Route.publicationOperationRoutes() {
         }
     }
 
-    get("publications/filtered") {
+    post("publications/filtered") {
         val filter = call.receiveNullable<FilterRequest>() ?: run {
             call.respond(HttpStatusCode.BadRequest)
-            return@get
+            return@post
         }
         val filteredPublications = Publications.getFilteredPublications(filter = filter) ?: run {
             call.respond(status = HttpStatusCode.Conflict, "Database exception")
-            return@get
+            return@post
         }
         call.respond(status = HttpStatusCode.OK, message = filteredPublications)
     }
-
 
 }
 
