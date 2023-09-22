@@ -6,7 +6,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 fun getTextFrameType(frame: Frame.Text): TextFrameType {
-    val jsonString = frame.readText()
+    /*val jsonString = frame.readText()
     try {
         val messageDTO = Json.decodeFromString<MessageDTO>(jsonString)
         return TextFrameType.TMessage(messageDTO)
@@ -19,5 +19,6 @@ fun getTextFrameType(frame: Frame.Text): TextFrameType {
         val offerResponse = Json.decodeFromString<OfferResponseDTO>(jsonString)
         return TextFrameType.TOfferResponse(offerResponse)
     } catch (_: Exception) { }
+    return TextFrameType.TOther(Unit)*/
     return TextFrameType.TOther(Unit)
 }

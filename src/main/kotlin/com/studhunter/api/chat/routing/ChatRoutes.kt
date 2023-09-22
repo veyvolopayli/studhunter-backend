@@ -16,17 +16,15 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.selects.select
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 import kotlin.collections.LinkedHashMap
 
 fun Route.chatRoutes() {
-    val connections = Collections.synchronizedMap<String, MutableSet<Connection>>(LinkedHashMap())
-    val offerRequests = Collections.synchronizedMap<String, OfferRequest>(LinkedHashMap())
+    /*val connections = Collections.synchronizedMap<String, MutableSet<Connection>>(LinkedHashMap())
+    val dealRequests = Collections.synchronizedMap<String, DealRequest>(LinkedHashMap())
 
     authenticate {
         webSocket("/chat") {
@@ -91,7 +89,7 @@ fun Route.chatRoutes() {
                                 val offerRequestDTO = frameType.data as? OfferRequestDTO ?: continue
                                 if (currentUserId == chat.sellerId) {
                                     val offerRequest = offerRequestDTO.toOfferRequest(chatID = chatID)
-                                    offerRequests[chatID] = offerRequest
+                                    dealRequests[chatID] = offerRequest
                                     connections[chatID]?.forEach { connection ->
                                         if (connection.userID == chat.sellerId) {
                                             connection.session.send(Frame.Text(Json.encodeToString(offerRequest)))
@@ -103,9 +101,9 @@ fun Route.chatRoutes() {
                             is TextFrameType.TOfferResponse -> {
                                 val offerResponseDTO = frameType.data as? OfferResponseDTO ?: continue
                                 if (currentUserId == chat.customerId) {
-                                    if (offerRequests[chatID] == null) continue
-                                    val offerResponse = offerResponseDTO.toOfferResponse(chatID = chatID, requestID = offerRequests[chatID]!!.id)
-                                    if (offerRequests[chatID]?.id == offerResponse.requestID) {
+                                    if (dealRequests[chatID] == null) continue
+                                    val offerResponse = offerResponseDTO.toOfferResponse(chatID = chatID, requestID = dealRequests[chatID]!!.id)
+                                    if (dealRequests[chatID]?.id == offerResponse.requestID) {
                                         if (offerResponse.positive) {
                                             val task = Task(
                                                 executorID = chat.sellerId,
@@ -237,7 +235,7 @@ fun Route.chatRoutes() {
             call.respond(status = HttpStatusCode.OK, chats)
         }
 
-    }
+    }*/
 
 }
 

@@ -5,7 +5,6 @@ import com.studhunter.api.chat.tables.Chats
 import com.studhunter.api.chat.tables.Tasks
 import com.studhunter.api.chat.tables.UserChatMessages
 import com.studhunter.api.features.getAuthenticatedUserID
-import com.studhunter.api.publications.tables.Publications
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -27,12 +26,12 @@ private const val INCOMING_TYPE_DEAL_RESPONSE = "deal_response"
 
 fun Route.normalChatRoutes() {
     val connections = Collections.synchronizedMap<String, MutableSet<Connection>>(LinkedHashMap())
-    val offerRequests = Collections.synchronizedMap<String, OfferRequest>(LinkedHashMap())
+    val dealRequests = Collections.synchronizedMap<String, DealRequest>(LinkedHashMap())
 
-    val json = Json {
+    /*val json = Json {
         serializersModule = SerializersModule {
             polymorphic(DataTransfer::class) {
-                subclass(OfferRequest::class)
+                subclass(DealRequest::class)
                 subclass(OfferRequestDTO::class)
                 subclass(OfferResponse::class)
                 subclass(OfferResponseDTO::class)
@@ -104,7 +103,7 @@ fun Route.normalChatRoutes() {
                                     val dealRequestDto = incomingTextFrame.data as? OfferRequestDTO ?: continue
                                     println("DEAL DEAL DEAL DEAL DEAL DEAL DEAL DEAL DEAL DEAL DEAL DEAL DEAL DEAL ")
                                     val dealRequest = dealRequestDto.toOfferRequest(chatID = chatID)
-                                    offerRequests[chatID] = dealRequest
+                                    dealRequests[chatID] = dealRequest
                                     connections[chatID]?.find { it.userID == chat.sellerId }?.session?.send(json.encodeToString(IncomingTextFrame(type = INCOMING_TYPE_DEAL_REQUEST, data = dealRequest)))
                                 } catch (e: Exception) {
                                     call.respond(status = HttpStatusCode.Conflict, "Wrong data structure for type 'deal request'")
@@ -113,7 +112,7 @@ fun Route.normalChatRoutes() {
                             INCOMING_TYPE_DEAL_RESPONSE -> {
                                 try {
                                     val dealResponseDto = incomingTextFrame.data as? OfferResponseDTO ?: continue
-                                    offerRequests[chatID]?.let { request ->
+                                    dealRequests[chatID]?.let { request ->
                                         val dealResponse = dealResponseDto.toOfferResponse(chatID = chatID, requestID = request.id)
                                         if (currentUserID == chat.customerId) {
                                             connections[chatID]?.forEach { connection ->
@@ -128,7 +127,7 @@ fun Route.normalChatRoutes() {
                                                         )
                                                         Tasks.insertTask(task)
                                                     } else {
-                                                        offerRequests.remove(chatID)
+                                                        dealRequests.remove(chatID)
                                                     }
                                                     connection.session.send(json.encodeToString(IncomingTextFrame(type = INCOMING_TYPE_DEAL_RESPONSE, data = dealResponse)))
                                                 }
@@ -164,35 +163,6 @@ fun Route.normalChatRoutes() {
                     it.add(thisConnection)
                 }
 
-//                val publication = Publications.getPublication(pubID) ?: run {
-//                    call.respond(status = HttpStatusCode.BadRequest, message = "Publication not found")
-//                    return@webSocket
-//                }
-//
-//                val thisConnection = Connection(currentUserID, this)
-//
-//                val chat = Chats.fetchChat(publicationID = pubID, userID = currentUserID) ?: run {
-//                    val chat = Chat(
-//                        publicationId = pubID,
-//                        customerId = currentUserID,
-//                        sellerId = publication.userId,
-//                        lastMessage = ""
-//                    )
-//                    Chats.insertChat(chat)
-//                    chat
-//                }
-//
-//                val chatConnections = connections.getOrPut(chat.id) {
-//                    mutableSetOf()
-//                }
-//                connections[chat.id] = chatConnections.also {
-//                    it.add(thisConnection)
-//                }
-
-                /*UserChatMessages.getMessages(chat.id)?.forEach { message ->
-                    send(Frame.Text(json.encodeToString(IncomingTextFrame(type = INCOMING_TYPE_MESSAGE, data = message))))
-                }*/
-
                 try {
                     for (frame in incoming) {
                         frame as? Frame.Text ?: continue
@@ -218,7 +188,7 @@ fun Route.normalChatRoutes() {
                                 try {
                                     val dealRequestDto = incomingTextFrame.data as? OfferRequestDTO ?: continue
                                     val dealRequest = dealRequestDto.toOfferRequest(chatID = chat.id)
-                                    offerRequests[chat.id] = dealRequest
+                                    dealRequests[chat.id] = dealRequest
                                     if (currentUserID == chat.sellerId) {
                                         connections[chat.id]?.forEach { connection ->
                                             if (connection.userID == chat.customerId) {
@@ -233,7 +203,7 @@ fun Route.normalChatRoutes() {
                             INCOMING_TYPE_DEAL_RESPONSE -> {
                                 try {
                                     val dealResponseDto = incomingTextFrame.data as? OfferResponseDTO ?: continue
-                                    offerRequests[chat.id]?.let { request ->
+                                    dealRequests[chat.id]?.let { request ->
                                         val dealResponse = dealResponseDto.toOfferResponse(chatID = chat.id, requestID = request.id)
                                         if (currentUserID == chat.customerId) {
                                             connections[chat.id]?.forEach { connection ->
@@ -248,7 +218,7 @@ fun Route.normalChatRoutes() {
                                                         )
                                                         Tasks.insertTask(task)
                                                     } else {
-                                                        offerRequests.remove(chat.id)
+                                                        dealRequests.remove(chat.id)
                                                     }
                                                     connection.session.send(json.encodeToString(IncomingTextFrame(type = INCOMING_TYPE_DEAL_RESPONSE, data = dealResponse)))
                                                 }
@@ -267,10 +237,6 @@ fun Route.normalChatRoutes() {
                 }
 
             } ?: call.respond(status = HttpStatusCode.BadRequest, message = "Chat ID or publication ID required")
-        }
-
-        webSocket {
-
         }
 
         get("chats/get") {
@@ -312,5 +278,5 @@ fun Route.normalChatRoutes() {
             }
             call.respond(status = HttpStatusCode.OK, message = messages)
         }
-    }
+    }*/
 }

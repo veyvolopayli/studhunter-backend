@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.AmazonS3
 import com.studhunter.api.auth.routes.*
 import com.studhunter.api.chat.routing.chatRoutes
 import com.studhunter.api.chat.routing.normalChatRoutes
+import com.studhunter.api.chat.routing.veryNormalChatRoutes
 import com.studhunter.api.email.routes.emailRouting
 import com.studhunter.api.email.service.EmailService
 import com.studhunter.api.favorites.routing.favoritePublicationRoutes
@@ -51,7 +52,8 @@ fun Application.configureRouting(
         emailRouting()
         updateRoutes(ycUpdateRepository)
 //        chatRoutes()
-        normalChatRoutes()
+//        normalChatRoutes()
+        veryNormalChatRoutes()
         favoritePublicationRoutes()
 
         get("/") {
