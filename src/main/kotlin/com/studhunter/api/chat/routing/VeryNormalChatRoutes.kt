@@ -6,6 +6,7 @@ import com.studhunter.api.chat.tables.Tasks
 import com.studhunter.api.chat.tables.UserChatMessages
 import com.studhunter.api.features.getAuthenticatedUserID
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -75,7 +76,7 @@ fun Route.veryNormalChatRoutes() {
                         val textFrame = frame.readText()
 
                         val incomingTextFrame = json.decodeFromString<IncomingTextFrame>(textFrame)
-                        when(incomingTextFrame.type) {
+                        when (incomingTextFrame.type) {
                             TRANSFERRING_TYPE_MESSAGE -> {
                                 try {
                                     val messageDto = incomingTextFrame.data as? MessageDTO ?: continue
@@ -83,12 +84,23 @@ fun Route.veryNormalChatRoutes() {
                                     val message = messageDto.toMessage(chatID = chatID, fromID = currentUserID)
                                     UserChatMessages.insertMessage(message) ?: continue
                                     connections[chatID]?.forEach { connection ->
-                                        connection.session.send(json.encodeToString(IncomingTextFrame(type = TRANSFERRING_TYPE_MESSAGE, data = message)))
+                                        connection.session.send(
+                                            json.encodeToString(
+                                                IncomingTextFrame(
+                                                    type = TRANSFERRING_TYPE_MESSAGE,
+                                                    data = message
+                                                )
+                                            )
+                                        )
                                     }
                                 } catch (e: Exception) {
-                                    call.respond(status = HttpStatusCode.Conflict, "Wrong data structure for type 'message'")
+                                    call.respond(
+                                        status = HttpStatusCode.Conflict,
+                                        "Wrong data structure for type 'message'"
+                                    )
                                 }
                             }
+
                             TRANSFERRING_TYPE_DEAL_REQUEST -> {
                                 try {
                                     val dealRequest = incomingTextFrame.data as? DealRequest ?: continue
@@ -106,14 +118,27 @@ fun Route.veryNormalChatRoutes() {
                                     )
 
                                     connections[chatID]?.forEach { connection ->
-                                        connection.session.send(Frame.Text(json.encodeToString(IncomingTextFrame(type = TRANSFERRING_TYPE_TASK, data = newTask))))
+                                        connection.session.send(
+                                            Frame.Text(
+                                                json.encodeToString(
+                                                    IncomingTextFrame(
+                                                        type = TRANSFERRING_TYPE_TASK,
+                                                        data = newTask
+                                                    )
+                                                )
+                                            )
+                                        )
                                     }
 
 //                                    connections[chatID]?.find { it.userID == chat.sellerId }?.session?.send(json.encodeToString(IncomingTextFrame(type = INCOMING_TYPE_DEAL_REQUEST, data = dealRequest)))
                                 } catch (e: Exception) {
-                                    call.respond(status = HttpStatusCode.Conflict, "Wrong data structure for type 'deal request'")
+                                    call.respond(
+                                        status = HttpStatusCode.Conflict,
+                                        "Wrong data structure for type 'deal request'"
+                                    )
                                 }
                             }
+
                             TRANSFERRING_TYPE_TASK -> {
                                 val task = incomingTextFrame.data as? Task ?: continue
 
@@ -125,7 +150,7 @@ fun Route.veryNormalChatRoutes() {
 
                                 try {
                                     connections[chatID]?.forEach { connection ->
-                                        connection.session.send(Frame.Text(json.encodeToString(task)))
+                                        connection.session.send(Frame.Text(json.encodeToString(IncomingTextFrame(TRANSFERRING_TYPE_TASK, task))))
                                     }
                                 } catch (e: Exception) {
                                     e.printStackTrace()
@@ -163,7 +188,7 @@ fun Route.veryNormalChatRoutes() {
 
                         val incomingTextFrame = json.decodeFromString<IncomingTextFrame>(textFrame)
 
-                        when(incomingTextFrame.type) {
+                        when (incomingTextFrame.type) {
                             TRANSFERRING_TYPE_MESSAGE -> {
                                 try {
                                     val messageDto = incomingTextFrame.data as? MessageDTO ?: continue
@@ -171,12 +196,23 @@ fun Route.veryNormalChatRoutes() {
                                     val message = messageDto.toMessage(chatID = chat.id, fromID = currentUserID)
                                     UserChatMessages.insertMessage(message) ?: continue
                                     connections[chat.id]?.forEach { connection ->
-                                        connection.session.send(json.encodeToString(IncomingTextFrame(type = TRANSFERRING_TYPE_MESSAGE, data = message)))
+                                        connection.session.send(
+                                            json.encodeToString(
+                                                IncomingTextFrame(
+                                                    type = TRANSFERRING_TYPE_MESSAGE,
+                                                    data = message
+                                                )
+                                            )
+                                        )
                                     }
                                 } catch (e: Exception) {
-                                    call.respond(status = HttpStatusCode.Conflict, "Wrong data structure for type 'message'")
+                                    call.respond(
+                                        status = HttpStatusCode.Conflict,
+                                        "Wrong data structure for type 'message'"
+                                    )
                                 }
                             }
+
                             TRANSFERRING_TYPE_DEAL_REQUEST -> {
                                 try {
                                     val dealRequest = incomingTextFrame.data as? DealRequest ?: continue
@@ -186,18 +222,43 @@ fun Route.veryNormalChatRoutes() {
                                         customerId = currentUserID,
                                         executorId = chat.sellerId,
                                         publicationId = chat.publicationId,
-                                        chatId = chat.id
+                                        chatId = chat.id,
+                                        timestamp = 94828141214243
                                     )
 
+                                    println(newTask)
+
                                     connections[chat.id]?.forEach { connection ->
-                                        connection.session.send(Frame.Text(json.encodeToString(IncomingTextFrame(type = TRANSFERRING_TYPE_TASK, data = newTask))))
+                                        println(
+                                            json.encodeToString(
+                                                IncomingTextFrame(
+                                                    type = TRANSFERRING_TYPE_TASK,
+                                                    data = newTask
+                                                )
+                                            )
+                                        )
+
+                                        connection.session.send(
+                                            Frame.Text(
+                                                json.encodeToString(
+                                                    IncomingTextFrame(
+                                                        type = TRANSFERRING_TYPE_TASK,
+                                                        data = newTask
+                                                    )
+                                                )
+                                            )
+                                        )
                                     }
 
 //                                    connections[chatID]?.find { it.userID == chat.sellerId }?.session?.send(json.encodeToString(IncomingTextFrame(type = INCOMING_TYPE_DEAL_REQUEST, data = dealRequest)))
                                 } catch (e: Exception) {
-                                    call.respond(status = HttpStatusCode.Conflict, "Wrong data structure for type 'deal request'")
+                                    call.respond(
+                                        status = HttpStatusCode.Conflict,
+                                        "Wrong data structure for type 'deal request'"
+                                    )
                                 }
                             }
+
                             TRANSFERRING_TYPE_TASK -> {
                                 val task = incomingTextFrame.data as? Task ?: continue
 
@@ -209,7 +270,24 @@ fun Route.veryNormalChatRoutes() {
 
                                 try {
                                     connections[chat.id]?.forEach { connection ->
-                                        connection.session.send(Frame.Text(json.encodeToString(task)))
+                                        println(
+                                            json.encodeToString(
+                                                IncomingTextFrame(
+                                                    type = TRANSFERRING_TYPE_TASK,
+                                                    data = task
+                                                )
+                                            )
+                                        )
+                                        connection.session.send(
+                                            Frame.Text(
+                                                json.encodeToString(
+                                                    IncomingTextFrame(
+                                                        type = TRANSFERRING_TYPE_TASK,
+                                                        data = task
+                                                    )
+                                                )
+                                            )
+                                        )
                                     }
                                 } catch (e: Exception) {
                                     e.printStackTrace()
@@ -223,6 +301,46 @@ fun Route.veryNormalChatRoutes() {
                 }
 
             } ?: call.respond(status = HttpStatusCode.BadRequest, message = "Chat ID or publication ID required")
+        }
+
+        get("chats/get") {
+            val userID = call.getAuthenticatedUserID() ?: run {
+                call.respond(HttpStatusCode.Unauthorized)
+                return@get
+            }
+            val chats = Chats.fetchChats(userId = userID) ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "Some database error")
+                return@get
+            }
+            call.respond(status = HttpStatusCode.OK, chats)
+        }
+
+        get("chat/by-chat_id/{chatID}/messages") {
+            val chatID = call.parameters["chatID"] ?: run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            val messages = UserChatMessages.getMessages(chatID) ?: run {
+                call.respond(status = HttpStatusCode.Conflict, "Failed to fetch messages")
+                return@get
+            }
+            call.respond(status = HttpStatusCode.OK, message = messages)
+        }
+
+        get("chat/by-publication_id/{pubID}/messages") {
+            val pubID = call.parameters["pubID"] ?: run {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            val currentUserId = call.getAuthenticatedUserID() ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "JWT exception was occurred")
+                return@get
+            }
+            val messages = UserChatMessages.getMessages(userId = currentUserId, publicationId = pubID) ?: run {
+                call.respond(status = HttpStatusCode.Conflict, "Failed to fetch messages")
+                return@get
+            }
+            call.respond(status = HttpStatusCode.OK, message = messages)
         }
     }
 }
