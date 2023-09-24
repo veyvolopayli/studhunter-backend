@@ -11,6 +11,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
+import io.ktor.util.date.*
 import io.ktor.websocket.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -19,6 +20,7 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import java.util.*
+import kotlin.collections.LinkedHashMap
 
 private const val TRANSFERRING_TYPE_MESSAGE = "message"
 private const val TRANSFERRING_TYPE_DEAL_REQUEST = "deal_request"
@@ -27,6 +29,7 @@ private const val TRANSFERRING_TYPE_TASK = "task"
 fun Route.veryNormalChatRoutes() {
     val connections = Collections.synchronizedMap<String, MutableSet<Connection>>(LinkedHashMap())
     val dealRequests = Collections.synchronizedMap<String, DealRequest>(LinkedHashMap())
+    val tasks = Collections.synchronizedMap<String, Task>(LinkedHashMap())
 
     val json = Json {
         serializersModule = SerializersModule {
@@ -70,6 +73,12 @@ fun Route.veryNormalChatRoutes() {
                     it.add(thisConnection)
                 }
 
+                /*tasks[chatID]?.let { task ->
+                    connections[chatID]?.forEach { connection ->
+                        connection.session.send(Frame.Text(json.encodeToString(IncomingTextFrame(type = TRANSFERRING_TYPE_TASK, data = task))))
+                    }
+                }*/
+
                 try {
                     for (frame in incoming) {
                         frame as? Frame.Text ?: continue
@@ -80,8 +89,8 @@ fun Route.veryNormalChatRoutes() {
                             TRANSFERRING_TYPE_MESSAGE -> {
                                 try {
                                     val messageDto = incomingTextFrame.data as? MessageDTO ?: continue
-                                    println(messageDto)
                                     val message = messageDto.toMessage(chatID = chatID, fromID = currentUserID)
+                                    println(message)
                                     UserChatMessages.insertMessage(message) ?: continue
                                     connections[chatID]?.forEach { connection ->
                                         connection.session.send(
@@ -110,12 +119,27 @@ fun Route.veryNormalChatRoutes() {
                                     //  общая на сервере. Значит, что при получении currentUserId, например, при
                                     //  перехвате dealRequest у меня есть полная уверенность в том, что он присвоится правильно.
 
+                                    val currentTime = getTimeMillis()
+
                                     val newTask = Task(
                                         customerId = currentUserID,
                                         executorId = chat.sellerId,
                                         publicationId = chat.publicationId,
-                                        chatId = chatID
+                                        chatId = chatID,
+                                        timestamp = currentTime,
+                                        status = ""
                                     )
+
+                                    tasks[chatID] = newTask
+
+                                    println(newTask)
+
+                                    println(json.encodeToString(
+                                        IncomingTextFrame(
+                                            type = TRANSFERRING_TYPE_TASK,
+                                            data = newTask
+                                        )
+                                    ))
 
                                     connections[chatID]?.forEach { connection ->
                                         connection.session.send(
@@ -141,6 +165,8 @@ fun Route.veryNormalChatRoutes() {
 
                             TRANSFERRING_TYPE_TASK -> {
                                 val task = incomingTextFrame.data as? Task ?: continue
+
+                                tasks[chatID] = task
 
                                 Tasks.insertTask(task) ?: run {
                                     close()
@@ -181,6 +207,12 @@ fun Route.veryNormalChatRoutes() {
                     it.add(thisConnection)
                 }
 
+                /*tasks[chat.id]?.let { task ->
+                    connections[chat.id]?.forEach { connection ->
+                        connection.session.send(Frame.Text(json.encodeToString(IncomingTextFrame(type = TRANSFERRING_TYPE_TASK, data = task))))
+                    }
+                }*/
+
                 try {
                     for (frame in incoming) {
                         frame as? Frame.Text ?: continue
@@ -218,26 +250,20 @@ fun Route.veryNormalChatRoutes() {
                                     val dealRequest = incomingTextFrame.data as? DealRequest ?: continue
                                     dealRequests[chat.id] = dealRequest
 
+                                    val currentTime = getTimeMillis()
+
                                     val newTask = Task(
                                         customerId = currentUserID,
                                         executorId = chat.sellerId,
                                         publicationId = chat.publicationId,
                                         chatId = chat.id,
-                                        timestamp = 94828141214243
+                                        timestamp = currentTime,
+                                        status = ""
                                     )
 
-                                    println(newTask)
+                                    tasks[chat.id] = newTask
 
                                     connections[chat.id]?.forEach { connection ->
-                                        println(
-                                            json.encodeToString(
-                                                IncomingTextFrame(
-                                                    type = TRANSFERRING_TYPE_TASK,
-                                                    data = newTask
-                                                )
-                                            )
-                                        )
-
                                         connection.session.send(
                                             Frame.Text(
                                                 json.encodeToString(
@@ -262,6 +288,8 @@ fun Route.veryNormalChatRoutes() {
                             TRANSFERRING_TYPE_TASK -> {
                                 val task = incomingTextFrame.data as? Task ?: continue
 
+                                tasks[chat.id] = task
+
                                 Tasks.insertTask(task) ?: run {
                                     close()
                                     call.respond(status = HttpStatusCode.Conflict, message = "Database exception")
@@ -270,14 +298,6 @@ fun Route.veryNormalChatRoutes() {
 
                                 try {
                                     connections[chat.id]?.forEach { connection ->
-                                        println(
-                                            json.encodeToString(
-                                                IncomingTextFrame(
-                                                    type = TRANSFERRING_TYPE_TASK,
-                                                    data = task
-                                                )
-                                            )
-                                        )
                                         connection.session.send(
                                             Frame.Text(
                                                 json.encodeToString(
@@ -342,5 +362,20 @@ fun Route.veryNormalChatRoutes() {
             }
             call.respond(status = HttpStatusCode.OK, message = messages)
         }
+
+        get("chat/{id}/task") {
+            val chatId = call.parameters["id"] ?: run {
+                call.respond(status = HttpStatusCode.BadRequest, message = "Where is chat id?")
+                return@get
+            }
+
+            val task = Tasks.getTask(chatId = chatId) ?: tasks[chatId] ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "No task")
+                return@get
+            }
+
+            call.respond(status = HttpStatusCode.OK, message = task)
+        }
+
     }
 }

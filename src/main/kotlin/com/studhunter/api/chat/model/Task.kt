@@ -13,6 +13,6 @@ data class Task(
     val customerId: String,
     val publicationId: String,
     val chatId: String,
-    val status: String = "",
-    val timestamp: Long = getTimeMillis()
+    val status: String,
+    val timestamp: Long
 ): DataTransfer

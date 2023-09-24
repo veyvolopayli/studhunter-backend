@@ -20,7 +20,7 @@ object Users : Table(), UsersRepository {
     private val name = Users.varchar("name", 25)
     private val surname = Users.varchar("surname", 25).nullable()
     private val email = Users.varchar("email", 50)
-    private val university = Users.varchar("university", 30).nullable()
+    private val university = Users.varchar("university", 200).nullable()
 
     override fun insertUser(user: User): String? {
         return try {
