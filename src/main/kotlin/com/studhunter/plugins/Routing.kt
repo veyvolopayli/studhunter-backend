@@ -13,6 +13,7 @@ import com.studhunter.api.publications.repository.YCloudPublicationsRepository
 import com.studhunter.api.publications.routing.*
 import com.studhunter.api.reviews.routing.fetchReviews
 import com.studhunter.api.reviews.routing.insertReviews
+import com.studhunter.api.task.routing.taskRoutes
 import com.studhunter.api.updates.repository.UpdateRepository
 import com.studhunter.api.updates.routes.updateRoutes
 import com.studhunter.api.users.repository.UsersRepository
@@ -55,6 +56,7 @@ fun Application.configureRouting(
 //        normalChatRoutes()
         veryNormalChatRoutes()
         favoritePublicationRoutes()
+        taskRoutes()
 
         get("/") {
             call.respond(

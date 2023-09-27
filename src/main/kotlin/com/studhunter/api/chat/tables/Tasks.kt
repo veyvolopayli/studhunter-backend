@@ -1,11 +1,8 @@
 package com.studhunter.api.chat.tables
 
 import com.studhunter.api.chat.model.Task
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 
 object Tasks : Table() {
     private val id = varchar("id", 36)
@@ -65,6 +62,57 @@ object Tasks : Table() {
                     timestamp = row[timestamp],
                     status = row[status]
                 )
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getTasks(userId: String, userStatus: String, taskStatus: String): List<Task>? {
+        return try {
+            val userIdColumn = when (userStatus) {
+                "executor" -> executorId
+                "customer" -> customerId
+                else -> return null
+            }
+            if (taskStatus !in listOf("accepted", "declined", "complete")) return null
+            transaction {
+                select { userIdColumn.eq(userId) and status.eq(taskStatus) }.map {
+                    Task(
+                        id = it[Tasks.id],
+                        executorId = it[executorId],
+                        customerId = it[customerId],
+                        chatId = it[chatId],
+                        publicationId = it[pubId],
+                        status = it[status],
+                        timestamp = it[timestamp]
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getTasks(userId: String, userStatus: String): List<Task>? {
+        return try {
+            val userIdColumn = when (userStatus) {
+                "executor" -> executorId
+                "customer" -> customerId
+                else -> return null
+            }
+            transaction {
+                select { userIdColumn.eq(userId) }.map {
+                    Task(
+                        id = it[Tasks.id],
+                        executorId = it[executorId],
+                        customerId = it[customerId],
+                        chatId = it[chatId],
+                        publicationId = it[pubId],
+                        status = it[status],
+                        timestamp = it[timestamp]
+                    )
+                }
             }
         } catch (e: Exception) {
             null
