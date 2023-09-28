@@ -1,6 +1,10 @@
 package com.studhunter.api.task.routing
 
+import com.studhunter.api.chat.model.Task
 import com.studhunter.api.chat.tables.Tasks
+import com.studhunter.api.features.getAuthenticatedUserID
+import com.studhunter.api.task.model.WideTask
+import com.studhunter.api.users.tables.Users
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -20,12 +24,28 @@ fun Route.taskRoutes() {
                 return@get
             }
 
+            /*val currentUserId = call.getAuthenticatedUserID() ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "Wrong JWT")
+                return@get
+            }*/
+
             val tasks = Tasks.getTasks(userId = userId, userStatus = userStatus, taskStatus = taskStatus) ?: run {
                 call.respond(status = HttpStatusCode.Conflict, message = "Wrong request")
                 return@get
             }
 
-            call.respond(tasks)
+            try {
+                val wideTasks = tasks.map { task ->
+                    WideTask(
+                        task = task,
+                        executor = Users.getUserById(task.executorId) ?: throw Exception("Executor of task doesn't exist")
+                    )
+                }
+                call.respond(wideTasks)
+            } catch (e: Exception) {
+                call.respond(status = HttpStatusCode.Conflict, message = e.message ?: "Ooops")
+            }
+
         }
     }
 }

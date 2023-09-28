@@ -14,5 +14,6 @@ data class Task(
     val publicationId: String,
     val chatId: String,
     val status: String,
-    val timestamp: Long
+    val timestamp: Long,
+    val deadline: Long
 ): DataTransfer
