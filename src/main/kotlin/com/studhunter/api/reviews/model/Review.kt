@@ -8,8 +8,8 @@ import java.util.UUID
 data class Review(
     val id: String = UUID.randomUUID().toString(),
     val reviewerId: String,
-    val userId: String,
-    val review: Double?,
+    val executorId: String,
+    val reviewValue: Double?,
     val reviewMessage: String?,
     val timestamp: Long = getTimeMillis(),
     val publicationId: String

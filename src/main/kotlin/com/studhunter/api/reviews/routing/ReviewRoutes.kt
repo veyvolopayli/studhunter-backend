@@ -36,9 +36,9 @@ fun Route.insertReviews() {
             }
 
             val review = Review(
-                userId = userId,
+                executorId = userId,
                 reviewerId = authorId,
-                review = null,
+                reviewValue = null,
                 reviewMessage = null,
                 publicationId = request.publicationId
             )

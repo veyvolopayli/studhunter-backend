@@ -136,7 +136,7 @@ object Users : Table(), UsersRepository {
 
     fun updateRating(userId: String): Boolean? {
         return try {
-            val reviews = Reviews.fetchUserReviews(userId).map { it.review }
+            val reviews = Reviews.fetchUserReviews(userId).map { it.reviewValue }
             if (reviews.isEmpty()) return false
             transaction {
                 val newRating = reviews.filterNotNull().sum() / reviews.count()

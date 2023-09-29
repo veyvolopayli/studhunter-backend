@@ -79,7 +79,7 @@ object Tasks : Table() {
                 "customer" -> customerId
                 else -> return null
             }
-            if (taskStatus !in listOf("accepted", "declined", "complete")) return null
+            if (taskStatus !in listOf("accepted", "declined", "complete", "closed")) return null
             transaction {
                 select { userIdColumn.eq(userId) and status.eq(taskStatus) }.map {
                     Task(
