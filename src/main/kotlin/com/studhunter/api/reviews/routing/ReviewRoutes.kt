@@ -1,7 +1,9 @@
 package com.studhunter.api.reviews.routing
 
+import com.studhunter.api.chat.tables.Tasks
+import com.studhunter.api.features.getAuthenticatedUserID
 import com.studhunter.api.reviews.model.Review
-import com.studhunter.api.reviews.requests.OpenReviewRequest
+import com.studhunter.api.reviews.requests.NewReviewRequest
 import com.studhunter.api.reviews.tables.Reviews
 import com.studhunter.api.users.tables.Users
 import io.ktor.http.*
@@ -14,43 +16,44 @@ import io.ktor.server.routing.*
 
 fun Route.insertReviews() {
     authenticate {
-        post("users/reviews/new") {
-            val request = call.receiveNullable<OpenReviewRequest>() ?: kotlin.run {
+        post("reviews/new") {
+            val reviewRequest = call.receiveNullable<NewReviewRequest>() ?: kotlin.run {
                 call.respond(HttpStatusCode.BadRequest)
                 return@post
             }
 
-            val principal = call.principal<JWTPrincipal>()
-            val authorId = principal?.getClaim("userId", String::class) ?: kotlin.run {
-                call.respond(HttpStatusCode.Unauthorized, "Your ID is invalid")
+            val currentUserId = call.getAuthenticatedUserID() ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "JWT01. Invalid JWT.")
                 return@post
             }
 
-            val userId = request.userId
+            val task = Tasks.getTaskById(taskId = reviewRequest.taskId) ?: run {
+                call.respond(status = HttpStatusCode.BadRequest, message = "Task does not exist")
+                return@post
+            }
 
-            val userExists = Users.getUserById(userId) != null
-
-            if (!userExists) {
-                call.respond(status = HttpStatusCode.BadRequest, message = "User does not exist")
+            if (currentUserId != task.customerId) {
+                println("$currentUserId : ${task.customerId}")
+                call.respond(status = HttpStatusCode.BadRequest, message = "No no no... Not today!")
                 return@post
             }
 
             val review = Review(
-                executorId = userId,
-                reviewerId = authorId,
-                reviewValue = null,
-                reviewMessage = null,
-                publicationId = request.publicationId
+                executorId = task.executorId,
+                reviewerId = currentUserId,
+                reviewValue = reviewRequest.reviewValue,
+                reviewMessage = reviewRequest.reviewMessage,
+                publicationId = task.publicationId
             )
 
-            val newReviewId = Reviews.openNewReview(reviewToOpen = review) ?: kotlin.run {
-                call.respond(status = HttpStatusCode.Conflict, "Failed to insert new review")
-                return@post
+            val reviewInserted = Reviews.insertReview(review)
+
+            if (reviewInserted != true) {
+                call.respond(status = HttpStatusCode.Conflict, message = "Failed to post a review")
+            } else {
+                Tasks.deleteTask(taskId = reviewRequest.taskId)
+                call.respond(status = HttpStatusCode.OK, message = review)
             }
-
-//            Users.updateRating(userId)
-
-            call.respond(status = HttpStatusCode.OK, message = newReviewId)
         }
     }
 }

@@ -2,6 +2,7 @@ package com.studhunter.api.chat.tables
 
 import com.studhunter.api.chat.model.Task
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Tasks : Table() {
@@ -72,6 +73,26 @@ object Tasks : Table() {
         }
     }
 
+    fun getTaskById(taskId: String): Task? {
+        return try {
+            transaction {
+                val row = select { Tasks.id.eq(taskId) }.single()
+                Task(
+                    id = row[Tasks.id],
+                    executorId = row[executorId],
+                    customerId = row[customerId],
+                    publicationId = row[pubId],
+                    chatId = row[chatId],
+                    timestamp = row[timestamp],
+                    status = row[status],
+                    deadline = row[deadline]
+                )
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     fun getTasks(userId: String, userStatus: String, taskStatus: String): List<Task>? {
         return try {
             val userIdColumn = when (userStatus) {
@@ -119,6 +140,16 @@ object Tasks : Table() {
                         deadline = it[deadline]
                     )
                 }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun deleteTask(taskId: String): Boolean? {
+        return try {
+            transaction {
+                deleteWhere { Tasks.id eq taskId } > 0
             }
         } catch (e: Exception) {
             null
