@@ -43,6 +43,10 @@ fun Route.veryNormalChatRoutes() {
         }
     }
 
+    Tasks.getAllTasks()?.let { allTasks ->
+        runOverdueTasksService(allTasks)
+    }
+
     authenticate {
         webSocket("/chat") {
             val chatIdParam = call.parameters["chatID"]
@@ -315,6 +319,7 @@ fun Route.veryNormalChatRoutes() {
                 call.respond(status = HttpStatusCode.Conflict, message = "Some database error")
                 return@get
             }
+
             call.respond(status = HttpStatusCode.OK, chats)
         }
 
@@ -346,33 +351,73 @@ fun Route.veryNormalChatRoutes() {
             call.respond(status = HttpStatusCode.OK, message = messages)
         }
 
-        get("chat/{id}/task") {
-            val chatId = call.parameters["id"] ?: run {
-                call.respond(status = HttpStatusCode.BadRequest, message = "Where is chat id?")
+        get("chat/task") {
+            val chatId = call.parameters["chatId"]
+            val publicationId = call.parameters["pubId"]
+
+            val currentUserId = call.getAuthenticatedUserID() ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "JWT has expired")
                 return@get
             }
 
-            val task = Tasks.getTask(chatId = chatId) ?: tasks[chatId] ?: run {
-                call.respond(status = HttpStatusCode.Conflict, message = "No task")
+            if (chatId != null && publicationId != null) {
+                call.respond(status = HttpStatusCode.BadRequest, message = "Both parameters cannot be applied")
                 return@get
             }
 
-            call.respond(status = HttpStatusCode.OK, message = task)
+            chatId?.let {
+                val task = Tasks.getTask(chatId = it) ?: tasks[it] ?: run {
+                    call.respond(status = HttpStatusCode.Conflict, message = "No task")
+                    return@get
+                }
+                call.respond(status = HttpStatusCode.OK, message = task)
+            } ?: publicationId?.let {
+                val fetchedChatId = Chats.fetchChat(publicationID = it, userID = currentUserId)?.id ?: run {
+                    call.respond(status = HttpStatusCode.BadRequest, message = "Chat for this publication doesn't exist")
+                    return@get
+                }
+                val task = Tasks.getTask(chatId = fetchedChatId) ?: tasks[fetchedChatId] ?: run {
+                    call.respond(status = HttpStatusCode.Conflict, message = "No task")
+                    return@get
+                }
+                call.respond(status = HttpStatusCode.OK, message = task)
+            }
+            call.respond(status = HttpStatusCode.BadRequest, message = "Parameter is required")
         }
+
+        /*get("chat/{pubId}/task") {
+            val publicationId = call.parameters["pubId"] ?: run {
+                call.respond(status = HttpStatusCode.BadRequest, message = "Where is publication id?")
+                return@get
+            }
+
+            val currentUserId = call.getAuthenticatedUserID() ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "JWT has expired")
+                return@get
+            }
+
+            val task = Tasks.getTask(customerId = currentUserId, publicationId = publicationId) ?: {
+
+            }
+        }*/
 
     }
 }
 
-fun runTimers(tasks: List<Task>) {
+fun runOverdueTasksService(tasks: List<Task>) {
     val timer = Timer()
     tasks.forEach { task ->
         val currentTime = getTimeMillis()
         if (currentTime >= task.deadline) {
             // todo Change task status to closed
+            val overdueTask = task.copy(status = "overdue")
+            Tasks.updateTask(overdueTask)
         } else {
-            val delay = currentTime - task.deadline
+            val delay = task.deadline - currentTime
             timer.schedule(delay) {
                 // todo change task status to closed
+                val overdueTask = task.copy(status = "overdue")
+                Tasks.updateTask(overdueTask)
             }
         }
     }

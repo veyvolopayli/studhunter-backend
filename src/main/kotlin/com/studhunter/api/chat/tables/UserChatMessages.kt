@@ -9,9 +9,9 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object UserChatMessages : Table("user_chat_messages"), UserChatRepository {
     private val messageId = varchar("id", 36)
     private val fromId = varchar("from_id", 36)
-    private val timestamp = long("timestamp")
-    private val messageBody = varchar("message_body", 150)
-    private val chatId = varchar("chat_id", 36)
+    val timestamp = long("timestamp")
+    val messageBody = varchar("message_body", 150)
+    val chatId = varchar("chat_id", 36)
     private val type = varchar("type", 20)
 
     override fun insertMessage(message: Message): String? {
@@ -76,4 +76,7 @@ object UserChatMessages : Table("user_chat_messages"), UserChatRepository {
         return null
     }
 
+    fun getMessageBodyColumn(): Column<String> = messageBody
+
+    fun getMessageTimestampColumn(): Column<Long> = timestamp
 }

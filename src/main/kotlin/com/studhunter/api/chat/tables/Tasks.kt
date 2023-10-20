@@ -155,4 +155,45 @@ object Tasks : Table() {
             null
         }
     }
+
+    fun getTask(customerId: String, pubId: String): Task? {
+        return try {
+            transaction {
+                val row = select { Tasks.customerId.eq(customerId) and Tasks.pubId.eq(pubId) }.single()
+                Task(
+                    id = row[Tasks.id],
+                    executorId = row[executorId],
+                    customerId = row[Tasks.customerId],
+                    publicationId = row[Tasks.pubId],
+                    chatId = row[chatId],
+                    timestamp = row[timestamp],
+                    status = row[status],
+                    deadline = row[deadline]
+                )
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getAllTasks(): List<Task>? {
+        return try {
+            transaction {
+                selectAll().map { row ->
+                    Task(
+                        id = row[Tasks.id],
+                        executorId = row[executorId],
+                        customerId = row[Tasks.customerId],
+                        publicationId = row[Tasks.pubId],
+                        chatId = row[chatId],
+                        timestamp = row[timestamp],
+                        status = row[status],
+                        deadline = row[deadline]
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

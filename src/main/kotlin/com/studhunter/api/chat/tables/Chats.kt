@@ -1,6 +1,8 @@
 package com.studhunter.api.chat.tables
 
 import com.studhunter.api.chat.model.Chat
+import com.studhunter.api.chat.model.detailed_chat.DetailedChat
+import com.studhunter.api.chat.model.detailed_chat.LastMessage
 import com.studhunter.api.publications.tables.Publications
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -47,6 +49,66 @@ object Chats : Table() {
                 }
             }
         } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun fetchChatsDetailed(userId: String): List<DetailedChat>? {
+        return try {
+            slice(UserChatMessages.getMessageTimestampColumn(), UserChatMessages.getMessageBodyColumn(), Publications.getPublicationTitleColumn())
+            /*transaction {
+                *//*select { customerId.eq(userId) or sellerId.eq(userId) }.map {
+                    Chat(
+                        id = it[chatId],
+                        publicationId = it[publicationId],
+                        sellerId = it[sellerId],
+                        customerId = it[customerId],
+                        lastMessage = it[lastMessage],
+                        timestamp = it[timestamp]
+                    )
+                }*//*
+
+                (this@Chats innerJoin UserChatMessages innerJoin Publications)
+                    .select { customerId.eq(userId) or sellerId.eq(userId) }
+                    .groupBy(chatId)
+                    .orderBy(chatId)
+                    .map {
+                        val chat = Chat(
+                            id = it[chatId],
+                            publicationId = it[publicationId],
+                            sellerId = it[sellerId],
+                            customerId = it[customerId],
+                            lastMessage = it[lastMessage],
+                            timestamp = it[timestamp]
+                        )
+                        val lastMessageBody = UserChatMessages
+                        val lastMessageTimestamp = it[UserChatMessages.getMessageTimestampColumn()] ?: 0
+                        val publicationTitle = it[Publications.getPublicationTitleColumn()] ?: ""
+                        DetailedChat(
+                            chat = chat,
+                            lastMessage = LastMessage(
+                                body = lastMessageBody,
+                                timestamp = lastMessageTimestamp
+                            ),
+                            publicationTitle = publicationTitle
+                        )
+                    }
+            }*/
+
+            val subquery = (UserChatMessages.slice(UserChatMessages.chatId, UserChatMessages.timestamp.max())
+                .selectAll()
+                .groupBy(UserChatMessages.chatId))
+                .alias("subquery")
+
+            val query = (Chats innerJoin subquery).slice(chatId, Publications.getPublicationTitleColumn(), UserChatMessages.getMessageBodyColumn())
+                .select { chatId eq subquery[UserChatMessages.chatId] and subquery[UserChatMessages.timestamp.max()] eq UserChatMessages.getMessageTimestampColumn() and publicationId eq Publications.getPublicationIdColumn() }
+
+            println(query)
+
+
+            null
+        } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }
@@ -127,5 +189,9 @@ object Chats : Table() {
         } catch (e: Exception) {
             return null
         }
+    }
+
+    fun niggers() {
+
     }
 }

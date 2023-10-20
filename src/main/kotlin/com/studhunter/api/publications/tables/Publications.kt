@@ -303,4 +303,7 @@ object Publications : Table(), PublicationsRepository {
         }
     }
 
+    fun getPublicationTitleColumn() = title
+    fun getPublicationIdColumn() = id
+
 }
