@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
@@ -61,6 +63,7 @@ dependencies {
 //    implementation("org.ktorm:ktorm-support-postgresql:$ktorm_version")
 
     sshAntTask("org.apache.ant:ant-jsch:1.10.13")
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
@@ -134,4 +137,12 @@ task("deploy") {
 
 tasks {
     create("stage").dependsOn("installDist")
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = "1.8"
+}
+val compileTestKotlin: KotlinCompile by tasks
+compileTestKotlin.kotlinOptions {
+    jvmTarget = "1.8"
 }

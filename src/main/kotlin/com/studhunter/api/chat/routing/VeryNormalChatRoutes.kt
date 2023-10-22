@@ -311,16 +311,15 @@ fun Route.veryNormalChatRoutes() {
         }
 
         get("chats/get") {
-            val userID = call.getAuthenticatedUserID() ?: run {
+            val userId = call.getAuthenticatedUserID() ?: run {
                 call.respond(HttpStatusCode.Unauthorized)
                 return@get
             }
-            val chats = Chats.fetchChats(userId = userID) ?: run {
-                call.respond(status = HttpStatusCode.Conflict, message = "Some database error")
+            val chats = Chats.fetchChatsDetailed(userId) ?: run {
+                call.respond(status = HttpStatusCode.Conflict, message = "Database error")
                 return@get
             }
-
-            call.respond(status = HttpStatusCode.OK, chats)
+            call.respond(chats)
         }
 
         get("chat/by-chat_id/{chatID}/messages") {
@@ -401,18 +400,6 @@ fun Route.veryNormalChatRoutes() {
             }
         }*/
 
-    }
-
-    get("chats/{userId}/test") {
-        val userId = call.parameters["userId"] ?: run {
-            call.respond(status = HttpStatusCode.BadRequest, message = "User id is required")
-            return@get
-        }
-        val chats = Chats.fetchChatsDetailed(userId) ?: run {
-            call.respond(status = HttpStatusCode.Conflict, message = "Database error")
-            return@get
-        }
-        call.respond(chats)
     }
 }
 
