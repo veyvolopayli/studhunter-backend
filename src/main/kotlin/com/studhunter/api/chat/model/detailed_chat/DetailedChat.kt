@@ -1,10 +1,13 @@
 package com.studhunter.api.chat.model.detailed_chat
 
-import com.studhunter.api.chat.model.Chat
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class DetailedChat(
-    val chat: Chat,
-    val avatar: String = "https://storage.yandexcloud.net/stud-hunter-bucket/users/avatars/${ chat.sellerId }",
-    val lastMessage: LastMessage,
-    val publicationTitle: String
+    val chatId: String,
+    val sellerId: String,
+    val avatar: String = "https://storage.yandexcloud.net/stud-hunter-bucket/users/avatars/${ sellerId }",
+    val lastMessage: String,
+    val publicationTitle: String,
+    val timestamp: Long
 )

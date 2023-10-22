@@ -55,58 +55,23 @@ object Chats : Table() {
 
     fun fetchChatsDetailed(userId: String): List<DetailedChat>? {
         return try {
-            slice(UserChatMessages.getMessageTimestampColumn(), UserChatMessages.getMessageBodyColumn(), Publications.getPublicationTitleColumn())
-            /*transaction {
-                *//*select { customerId.eq(userId) or sellerId.eq(userId) }.map {
-                    Chat(
-                        id = it[chatId],
-                        publicationId = it[publicationId],
-                        sellerId = it[sellerId],
-                        customerId = it[customerId],
-                        lastMessage = it[lastMessage],
-                        timestamp = it[timestamp]
-                    )
-                }*//*
-
-                (this@Chats innerJoin UserChatMessages innerJoin Publications)
-                    .select { customerId.eq(userId) or sellerId.eq(userId) }
-                    .groupBy(chatId)
-                    .orderBy(chatId)
-                    .map {
-                        val chat = Chat(
-                            id = it[chatId],
-                            publicationId = it[publicationId],
-                            sellerId = it[sellerId],
-                            customerId = it[customerId],
-                            lastMessage = it[lastMessage],
-                            timestamp = it[timestamp]
-                        )
-                        val lastMessageBody = UserChatMessages
-                        val lastMessageTimestamp = it[UserChatMessages.getMessageTimestampColumn()] ?: 0
-                        val publicationTitle = it[Publications.getPublicationTitleColumn()] ?: ""
+            transaction {
+                Chats.join(UserChatMessages, JoinType.INNER, onColumn = chatId, otherColumn = UserChatMessages.chatId)
+                    .join(Publications, JoinType.INNER, onColumn = publicationId, otherColumn = Publications.id)
+                    .slice(chatId, sellerId, UserChatMessages.messageBody, Publications.title, timestamp)
+                    .select { sellerId.eq(userId) or customerId.eq(userId) }
+                    .map { row ->
                         DetailedChat(
-                            chat = chat,
-                            lastMessage = LastMessage(
-                                body = lastMessageBody,
-                                timestamp = lastMessageTimestamp
-                            ),
-                            publicationTitle = publicationTitle
+                            chatId = row[chatId],
+                            sellerId = row[sellerId],
+                            lastMessage = row[UserChatMessages.messageBody],
+                            publicationTitle = row[Publications.title],
+                            timestamp = row[timestamp]
                         )
-                    }
-            }*/
+                    }.groupBy { it.chatId }.values
+                    .map { it.last() }
+            }
 
-            val subquery = (UserChatMessages.slice(UserChatMessages.chatId, UserChatMessages.timestamp.max())
-                .selectAll()
-                .groupBy(UserChatMessages.chatId))
-                .alias("subquery")
-
-            val query = (Chats innerJoin subquery).slice(chatId, Publications.getPublicationTitleColumn(), UserChatMessages.getMessageBodyColumn())
-                .select { chatId eq subquery[UserChatMessages.chatId] and subquery[UserChatMessages.timestamp.max()] eq UserChatMessages.getMessageTimestampColumn() and publicationId eq Publications.getPublicationIdColumn() }
-
-            println(query)
-
-
-            null
         } catch (e: Exception) {
             e.printStackTrace()
             null

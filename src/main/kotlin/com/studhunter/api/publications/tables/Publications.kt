@@ -10,9 +10,9 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Publications : Table(), PublicationsRepository {
-    private val id = Publications.varchar("id", 36)
+    val id = Publications.varchar("id", 36)
     private val imageUrl = Publications.varchar("imageurl", 120)
-    private val title = Publications.varchar("title", 50)
+    val title = Publications.varchar("title", 50)
     private val description = Publications.varchar("description", 1500)
     private val price = Publications.integer("price").nullable()
     private val priceType = Publications.varchar("pricetype", 20)
@@ -302,8 +302,5 @@ object Publications : Table(), PublicationsRepository {
             null
         }
     }
-
-    fun getPublicationTitleColumn() = title
-    fun getPublicationIdColumn() = id
 
 }

@@ -402,6 +402,18 @@ fun Route.veryNormalChatRoutes() {
         }*/
 
     }
+
+    get("chats/{userId}/test") {
+        val userId = call.parameters["userId"] ?: run {
+            call.respond(status = HttpStatusCode.BadRequest, message = "User id is required")
+            return@get
+        }
+        val chats = Chats.fetchChatsDetailed(userId) ?: run {
+            call.respond(status = HttpStatusCode.Conflict, message = "Database error")
+            return@get
+        }
+        call.respond(chats)
+    }
 }
 
 fun runOverdueTasksService(tasks: List<Task>) {
