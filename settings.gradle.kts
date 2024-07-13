@@ -1,1 +1,1 @@
-rootProject.name = "com.example.seefood-backend"
+rootProject.name = "studhunter"
