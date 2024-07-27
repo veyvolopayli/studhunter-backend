@@ -30,12 +30,16 @@ class EmailService(
 
     private fun createHtmlEmail(): HtmlEmail {
         return HtmlEmail().apply {
-            hostName = host
-            setSmtpPort(port)
-            setAuthenticator(DefaultAuthenticator(username, password))
-            isSSLOnConnect = ssl
+            hostName = "skvmrelay.netangels.ru"
             setFrom(senderEmail)
         }
+//        return HtmlEmail().apply {
+//            hostName = host
+//            setSmtpPort(port)
+//            setAuthenticator(DefaultAuthenticator(username, password))
+//            isSSLOnConnect = ssl
+//            setFrom(senderEmail)
+//        }
     }
 
     fun sendConfirmationEmail(recipientEmail: String, username: String, confirmationCode: Int) {

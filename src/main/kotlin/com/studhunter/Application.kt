@@ -13,6 +13,7 @@ import com.studhunter.plugins.*
 import com.studhunter.security.hashing.SHA256HashingService
 import com.studhunter.security.token.JwtTokenService
 import com.studhunter.security.token.TokenConfig
+import io.github.cdimascio.dotenv.dotenv
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -31,13 +32,15 @@ fun main() {
 
 fun Application.module() {
 
+    val dotEnv = dotenv { filename = "config.env" }
+
     Database.connect(
         url = "jdbc:postgresql://5.181.255.253:5432/studhunter", driver = "org.postgresql.Driver",
-        user = System.getenv("POSTGRES_USERNAME"), password = System.getenv("POSTGRES_PASSWORD")
+        user = dotEnv["POSTGRES_USERNAME"], password = dotEnv["POSTGRES_PASSWORD"]
     )
 
-    val awsAccessKey = System.getenv("AWS_ACCESS")
-    val awsSecretKey = System.getenv("AWS_SECRET")
+    val awsAccessKey = dotEnv["AWS_ACCESS"]
+    val awsSecretKey = dotEnv["AWS_SECRET"]
     val awsCreds = BasicAWSCredentials(awsAccessKey, awsSecretKey)
     val s3 = AmazonS3ClientBuilder.standard().withCredentials(AWSStaticCredentialsProvider(awsCreds))
         .withEndpointConfiguration(
@@ -51,7 +54,7 @@ fun Application.module() {
         issuer = "http://0.0.0.0:8080",
         audience = "users",
         expiresIn = 365L * 1000L * 60L * 60L * 24L,
-        secret = System.getenv("JWT_SECRET")
+        secret = dotEnv["JWT_SECRET"]
     )
 
     val hashingService = SHA256HashingService()
@@ -62,7 +65,7 @@ fun Application.module() {
         host = "smtp.yandex.ru",
         port = 465,
         username = "studhunterapp@yandex.ru",
-        password = System.getenv("MAIL_YANDEX_PASSWORD"),
+        password = dotEnv["MAIL_YANDEX_PASSWORD"],
         ssl = true,
         senderEmail = "studhunterapp@yandex.ru"
     )

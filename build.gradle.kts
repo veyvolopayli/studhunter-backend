@@ -59,8 +59,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     implementation("org.postgresql:postgresql:42.7.2")
     implementation("org.apache.commons:commons-email:1.5")
-
     implementation("net.coobird:thumbnailator:0.4.19")
-
     implementation("org.jsoup:jsoup:1.16.1")
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 }
