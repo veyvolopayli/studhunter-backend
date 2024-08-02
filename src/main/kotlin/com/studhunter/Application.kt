@@ -32,7 +32,10 @@ fun main() {
 
 fun Application.module() {
 
-    val dotEnv = dotenv { filename = "config.env" }
+    val dotEnv = dotenv {
+        filename = "config.env"
+        ignoreIfMissing = true
+    }
 
     Database.connect(
         url = "jdbc:postgresql://5.181.255.253:5432/studhunter", driver = "org.postgresql.Driver",

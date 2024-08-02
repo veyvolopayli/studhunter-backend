@@ -53,4 +53,8 @@ class EmailService(
         }.send()
     }
 
+    fun sendPasswordRecoveryEmail() {
+
+    }
+
 }

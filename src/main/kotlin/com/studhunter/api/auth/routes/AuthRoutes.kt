@@ -1,10 +1,10 @@
 package com.studhunter.api.auth.routes
 
-import com.studhunter.api.users.model.User
 import com.studhunter.api.auth.requests.SignInRequest
 import com.studhunter.api.auth.requests.SignUpRequest
 import com.studhunter.api.auth.responses.AuthResponse
 import com.studhunter.api.email.service.EmailService
+import com.studhunter.api.users.model.User
 import com.studhunter.api.users.tables.UserData
 import com.studhunter.api.users.tables.Users
 import com.studhunter.security.hashing.HashingService
@@ -20,6 +20,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.exceptions.ExposedSQLException
+import java.io.InputStreamReader
 
 fun Route.signUp(
     hashingService: HashingService,
