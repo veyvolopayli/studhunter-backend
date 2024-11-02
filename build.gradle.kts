@@ -62,4 +62,5 @@ dependencies {
     implementation("net.coobird:thumbnailator:0.4.19")
     implementation("org.jsoup:jsoup:1.16.1")
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+    implementation("io.ktor:ktor-server-cors:$ktorVersion")
 }

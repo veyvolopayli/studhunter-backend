@@ -3,9 +3,11 @@ package com.studhunter.plugins
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.studhunter.security.token.TokenConfig
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.cors.routing.*
 
 fun Application.configureSecurity(config: TokenConfig) {
 
@@ -25,6 +27,14 @@ fun Application.configureSecurity(config: TokenConfig) {
                 } else null
             }
         }
+    }
+
+    install(CORS) {
+        anyHost()
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
     }
 
     /*install(Sessions) {
