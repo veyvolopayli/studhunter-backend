@@ -18,6 +18,8 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.Schema
+import org.jetbrains.exposed.sql.SchemaUtils
 
 
 const val BUCKET_NAME = "stud-hunter-bucket"
@@ -37,9 +39,13 @@ fun Application.module() {
         ignoreIfMissing = true
     }
 
+    val serverUrl = dotEnv["SH_SERVER_ADDRESS"]
+    val dbName = dotEnv["SH_DB_NAME"]
+    val databaseUrl = "jdbc:postgresql://$serverUrl/$dbName"
+
     Database.connect(
-        url = "jdbc:postgresql://5.181.255.253:5432/studhunter", driver = "org.postgresql.Driver",
-        user = dotEnv["POSTGRES_USERNAME"], password = dotEnv["POSTGRES_PASSWORD"]
+        url = databaseUrl, driver = "org.postgresql.Driver",
+        user = dotEnv["SH_DB_USERNAME"], password = dotEnv["SH_DB_PASSWORD"]
     )
 
     val awsAccessKey = dotEnv["AWS_ACCESS"]

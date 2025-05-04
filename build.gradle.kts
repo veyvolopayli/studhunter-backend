@@ -13,7 +13,7 @@ group = "com.studhunter"
 version = "0.0.1"
 
 application {
-    mainClass.set("io.ktor.server.netty.EngineMain")
+    mainClass.set("com.studhunter.ApplicationKt")
     project.setProperty("mainClassName", mainClass.get())
 
     val isDevelopment: Boolean = project.ext.has("development")
@@ -31,14 +31,14 @@ repositories {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.762")
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
+//    implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-websockets:$ktorVersion")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
@@ -49,10 +49,10 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
-    implementation("org.litote.kmongo:kmongo:4.8.0")
-    implementation("org.litote.kmongo:kmongo-async:4.8.0")
-    implementation("org.litote.kmongo:kmongo-coroutine:4.8.0")
-    implementation("org.litote.kmongo:kmongo-reactor:4.8.0")
+//    implementation("org.litote.kmongo:kmongo:4.8.0")
+//    implementation("org.litote.kmongo:kmongo-async:4.8.0")
+//    implementation("org.litote.kmongo:kmongo-coroutine:4.8.0")
+//    implementation("org.litote.kmongo:kmongo-reactor:4.8.0")
     implementation("commons-codec:commons-codec:1.15")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
