@@ -9,14 +9,14 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-scp -i keys/shb-key build/libs/studhunter.jar $USER@$HOST:$DEPLOY_PATH
+scp -i keys/deploy-key build/libs/studhunter.jar $SH_SERVER_USER@$SH_SERVER_ADDRESS:$DEPLOY_PATH
 
 if [ $? -ne 0 ]; then
   echo "Не удалось скопировать JAR на сервер. Выход..."
   exit 1
 fi
 
-ssh -i keys/shb-key $USER@$HOST 'sudo systemctl restart studhunter.service'
+ssh -i keys/deploy-key $SH_SERVER_USER@$SH_SERVER_ADDRESS 'sudo systemctl daemon-reload && sudo systemctl restart studhunter.service'
 
 if [ $? -ne 0 ]; then
   echo "Не удалось перезапустить сервис. Выход..."

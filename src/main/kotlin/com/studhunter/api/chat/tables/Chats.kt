@@ -2,7 +2,6 @@ package com.studhunter.api.chat.tables
 
 import com.studhunter.api.chat.model.Chat
 import com.studhunter.api.chat.model.detailed_chat.DetailedChat
-import com.studhunter.api.chat.model.detailed_chat.LastMessage
 import com.studhunter.api.publications.tables.Publications
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
