@@ -9,6 +9,7 @@ import com.studhunter.api.publications.tables.Publications
 import com.studhunter.api.publications.yandex_cloud.YCloudPublicationRepositoryImpl
 import com.studhunter.api.updates.yandex_cloud.YcUpdateRepositoryImpl
 import com.studhunter.api.users.tables.Users
+import com.studhunter.features.db.createTables
 import com.studhunter.plugins.*
 import com.studhunter.security.hashing.SHA256HashingService
 import com.studhunter.security.token.JwtTokenService
@@ -18,8 +19,6 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.Schema
-import org.jetbrains.exposed.sql.SchemaUtils
 
 
 const val BUCKET_NAME = "stud-hunter-bucket"
@@ -46,7 +45,7 @@ fun Application.module() {
     Database.connect(
         url = databaseUrl, driver = "org.postgresql.Driver",
         user = dotEnv["SH_DB_USERNAME"], password = dotEnv["SH_DB_PASSWORD"]
-    )
+    ).createTables()
 
     val awsAccessKey = dotEnv["AWS_ACCESS"]
     val awsSecretKey = dotEnv["AWS_SECRET"]
