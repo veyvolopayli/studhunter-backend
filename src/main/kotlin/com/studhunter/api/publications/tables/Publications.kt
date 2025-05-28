@@ -250,7 +250,7 @@ object Publications : Table(), PublicationsRepository {
         return try {
             transaction {
 
-                val condition = userId eq Users.userId
+                val condition = userId eq Users.id
 
                 val result = join(Users, JoinType.INNER, additionalConstraint = { condition }).select {
                     approved.eq(true) or approved.eq(false) or approved.eq(null)

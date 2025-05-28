@@ -4,13 +4,16 @@ import com.studhunter.api.users.model.UserDataModel
 import com.studhunter.api.users.repository.UserDataRepository
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.*
 import kotlin.random.Random
 
 object UserData : Table("user_data"), UserDataRepository {
-    private val userId = varchar("userid", 36)
+    private val userId = reference("userid", Users.id)
     private val joinDate = long("join_date")
     private val emailConfirmed = bool("email_confirmed")
     private val confirmationCode = integer("confirmation_code")
+
+    override val primaryKey = PrimaryKey(userId)
 
     override fun insertUserData(userDataModel: UserDataModel): Int? {
         return try {
@@ -31,7 +34,7 @@ object UserData : Table("user_data"), UserDataRepository {
     override fun fetchUserEmailConfirmed(userId: String): Boolean? {
         return try {
             transaction {
-                val userDataModel = select { UserData.userId.eq(userId) }.single()
+                val userDataModel = select { UserData.userId eq UUID.fromString(userId) }.single()
                 userDataModel[emailConfirmed]
             }
         } catch (e: Exception) {
@@ -43,7 +46,7 @@ object UserData : Table("user_data"), UserDataRepository {
         return try {
             transaction {
                 val affectedRows = update({
-                    (UserData.userId eq userId) and (confirmationCode eq code) and (emailConfirmed eq false)
+                    (UserData.userId eq UUID.fromString(userId)) and (confirmationCode eq code) and (emailConfirmed eq false)
                 }) {
                     it[emailConfirmed] = true
                 }
@@ -59,7 +62,7 @@ object UserData : Table("user_data"), UserDataRepository {
         val newCode = Random.nextInt(333333, 999999)
         return try {
             transaction {
-                update({ UserData.userId.eq(userId) }) {
+                update({ UserData.userId eq UUID.fromString(userId) }) {
                     it[confirmationCode] = newCode
                 }
             }

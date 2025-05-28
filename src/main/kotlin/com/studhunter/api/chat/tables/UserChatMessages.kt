@@ -1,7 +1,7 @@
 package com.studhunter.api.chat.tables
 
-import com.studhunter.api.chat.repository.UserChatRepository
 import com.studhunter.api.chat.model.Message
+import com.studhunter.api.chat.repository.UserChatRepository
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction

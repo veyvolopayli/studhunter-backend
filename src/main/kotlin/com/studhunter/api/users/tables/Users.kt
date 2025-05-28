@@ -3,6 +3,7 @@ package com.studhunter.api.users.tables
 import com.studhunter.api.users.model.User
 import com.studhunter.api.users.responses.UserResponse
 import com.studhunter.api.reviews.tables.Reviews
+import com.studhunter.api.users.model.UserRole
 import com.studhunter.api.users.repository.UsersRepository
 import com.studhunter.api.users.requests.EditProfileRequest
 import org.jetbrains.exposed.sql.Table
@@ -10,23 +11,27 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.util.*
 
 object Users : Table(), UsersRepository {
-    val userId = Users.varchar("id", 36)
-    private val username = Users.varchar("username", 25)
+    val id = this.uuid("id").autoGenerate()
+    private val username = Users.varchar("username", 25).uniqueIndex()
     private val password = Users.varchar("password", 64)
     private val salt = Users.varchar("salt", 64)
     val rating = Users.double("rating")
     private val name = Users.varchar("name", 25)
     private val surname = Users.varchar("surname", 25).nullable()
-    private val email = Users.varchar("email", 50)
+    private val email = Users.varchar("email", 50).uniqueIndex()
     private val university = Users.varchar("university", 200).nullable()
+    private val role = Users.enumerationByName("role", 20, UserRole::class)
 
-    override fun insertUser(user: User): String? {
+    override val primaryKey = PrimaryKey(id)
+
+    override fun insertUser(user: User): UUID? {
         return try {
             transaction {
                 Users.insert {
-                    it[userId] = user.id
+                    it[id] = user.id
                     it[username] = user.username
                     it[password] = user.password
                     it[salt] = user.salt
@@ -35,6 +40,7 @@ object Users : Table(), UsersRepository {
                     it[surname] = user.surname
                     it[email] = user.email
                     it[university] = user.university
+                    it[role] = user.role
                 }
             }
             user.id
@@ -48,7 +54,7 @@ object Users : Table(), UsersRepository {
             transaction {
                 val user = Users.select { Users.username.eq(username) }.single()
                 UserResponse(
-                    id = user[Users.userId],
+                    id = user[Users.id].toString(),
                     username = user[Users.username],
                     email = user[email],
                     name = user[name],
@@ -67,7 +73,7 @@ object Users : Table(), UsersRepository {
             transaction {
                 val user = Users.select { Users.email.eq(email) }.first()
                 UserResponse(
-                    id = user[Users.userId],
+                    id = user[Users.id].toString(),
                     username = user[username],
                     email = user[Users.email],
                     name = user[name],
@@ -86,14 +92,15 @@ object Users : Table(), UsersRepository {
             transaction {
                 val user = Users.select { Users.username.eq(username) }.single()
                 User(
-                    id = user[Users.userId],
+                    id = user[Users.id],
                     username = user[Users.username],
                     email = user[email],
                     name = user[name],
                     surname = user[surname],
                     password = user[password],
                     salt = user[salt],
-                    university = user[university]
+                    university = user[university],
+                    role = user[role]
                 )
             }
         } catch (e: Exception) {
@@ -104,7 +111,7 @@ object Users : Table(), UsersRepository {
     override fun editUser(userID: String, editProfileRequest: EditProfileRequest): Boolean? {
         return try {
             transaction {
-                update({ Users.userId.eq(userID) }) {
+                update({ Users.id.eq(UUID.fromString(userID)) }) {
                     it[name] = editProfileRequest.name
                     it[surname] = editProfileRequest.surname
                     it[university] = editProfileRequest.university
@@ -118,9 +125,9 @@ object Users : Table(), UsersRepository {
     override fun getUserById(id: String): UserResponse? {
         return try {
             transaction {
-                val user = Users.select { Users.userId.eq(id) }.single()
+                val user = Users.select { Users.id.eq(UUID.fromString(id)) }.single()
                 UserResponse(
-                    id = user[Users.userId],
+                    id = user[Users.id].toString(),
                     username = user[username],
                     email = user[email],
                     name = user[name],
@@ -140,7 +147,7 @@ object Users : Table(), UsersRepository {
             if (reviews.isEmpty()) return false
             transaction {
                 val newRating = reviews.filterNotNull().sum() / reviews.count()
-                update({ Users.userId eq userId }) {
+                update({ Users.id eq UUID.fromString(userId) }) {
                     it[rating] = newRating
                 }
             }

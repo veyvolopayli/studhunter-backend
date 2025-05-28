@@ -1,5 +1,6 @@
 package com.studhunter.api.auth.requests
 
+import com.studhunter.api.users.model.UserRole
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,5 +10,6 @@ data class SignUpRequest(
     val email: String,
     val name: String,
     val surname: String? = null,
-    val university: String? = null
+    val university: String? = null,
+    val role: UserRole = UserRole.STUDENT
 )

@@ -154,8 +154,4 @@ object Chats : Table() {
             return null
         }
     }
-
-    fun niggers() {
-
-    }
 }

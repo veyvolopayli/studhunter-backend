@@ -30,11 +30,13 @@ fun Route.signUp(
 ) {
 
     post("signup") {
-
         val request = call.receiveNullable<SignUpRequest>() ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
+
+        println("new request")
+        println(request.toString())
 
         val areFieldsBlank = request.username.isBlank() || request.password.isBlank()
         val isPwTooShort = request.password.length < 6
@@ -43,12 +45,12 @@ fun Route.signUp(
             return@post
         }
 
-        val user = Users.getUserByUsername(request.username)
-
-        if (user != null) {
-            call.respond(status = HttpStatusCode.Conflict, message = "User already exists")
-            return@post
-        }
+//        val user = Users.getUserByUsername(request.username)
+//
+//        if (user != null) {
+//            call.respond(status = HttpStatusCode.Conflict, message = "User already exists")
+//            return@post
+//        }
 
         val saltedHash = hashingService.generateSaltedHash(request.password)
 
@@ -59,7 +61,8 @@ fun Route.signUp(
             email = request.email,
             name = request.name,
             surname = request.surname,
-            university = request.university
+            university = request.university,
+            role = request.role
         )
 
         try {
@@ -75,46 +78,18 @@ fun Route.signUp(
             return@post
         }
 
-        emailService.sendConfirmationEmail(newUser.email, newUser.username, userDataModel.confirmationCode)
+        val emailSent = emailService.sendConfirmationEmail(newUser.email, newUser.username, userDataModel.confirmationCode)
+        if (!emailSent) {
+            call.respond(
+                status = HttpStatusCode.Conflict,
+                message = "Не удалось отправить код подтверждения на почту ${newUser.email}"
+            )
+            return@post
+        }
 
-        val token = tokenService.generate(config = tokenConfig, TokenClaim(name = "userId", value = newUser.id))
+        val token = tokenService.generate(config = tokenConfig, TokenClaim(name = "userId", value = newUser.id.toString()))
 
         call.respond(status = HttpStatusCode.OK, message = AuthResponse(token = token))
-
-        /*val areFieldsBlank = request.username.isBlank() || request.password.isBlank()
-        val isPwTooShort = request.password.length < 6
-        if (areFieldsBlank || isPwTooShort) {
-            call.respond(status = HttpStatusCode.Conflict, message = "Password is too short or empty")
-            return@post
-        }
-
-        val userExist = try {
-            userDataSource.getUserByUsername(request.username) != null
-        } catch (e: Exception) {
-            false
-        }
-
-        if (userExist) {
-            call.respond(status = HttpStatusCode.Conflict, message = "User already exists")
-            return@post
-        }
-
-        val saltedHash = hashingService.generateSaltedHash(request.password)
-        val user = User(
-            username = request.username,
-            password = saltedHash.hash,
-            salt = saltedHash.salt,
-            email = request.email,
-            fullName = "${request.name} ${request.surname}"
-        )
-        val wasAcknowledged = userDataSource.insertUser(user)
-//        val wasAcknowledged = userDataSource.insertUser(user)
-        if (!wasAcknowledged) {
-            call.respond(HttpStatusCode.Conflict)
-            return@post
-        }
-
-        call.respond(HttpStatusCode.OK)*/
     }
 }
 
@@ -148,7 +123,7 @@ fun Route.signIn(
             return@post
         }
 
-        val token = tokenService.generate(config = tokenConfig, TokenClaim(name = "userId", value = user.id))
+        val token = tokenService.generate(config = tokenConfig, TokenClaim(name = "userId", value = user.id.toString()))
 
         call.respond(status = HttpStatusCode.OK, message = AuthResponse(token = token))
 

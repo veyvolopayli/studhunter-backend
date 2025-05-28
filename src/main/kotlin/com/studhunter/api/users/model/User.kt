@@ -3,7 +3,7 @@ package com.studhunter.api.users.model
 import java.util.*
 
 data class User(
-    val id: String = UUID.randomUUID().toString(),
+    val id: UUID = UUID.randomUUID(),
     val username: String,
     val password: String,
     val salt: String,
@@ -11,5 +11,6 @@ data class User(
     val name: String,
     val surname: String?,
     val email: String,
-    val university: String?
+    val university: String?,
+    val role: UserRole
 )
