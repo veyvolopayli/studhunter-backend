@@ -38,16 +38,13 @@ fun Route.favoritePublicationRoutes() {
             }
 
             val userID = call.getAuthenticatedUserID() ?: kotlin.run {
-                call.respond(status = HttpStatusCode.Conflict, message = "JWT exception")
+                call.respond(status = HttpStatusCode.Unauthorized, message = "Не авторизован")
                 return@post
             }
 
-            /*FavoritePublications.insertFavorite(userID, request.publicationId) ?: kotlin.run {
-                call.respond(HttpStatusCode.Conflict)
-                return@post
-            }*/
-
-            val isSuccessful = allFavorites.add(FavoritePublication(userID = userID, favoritePubID = request.publicationId))
+            val isSuccessful = allFavorites.add(FavoritePublication(
+                userID = userID, favoritePubID = request.publicationId)
+            )
 
             call.respond(status = HttpStatusCode.OK, message = isSuccessful)
         }

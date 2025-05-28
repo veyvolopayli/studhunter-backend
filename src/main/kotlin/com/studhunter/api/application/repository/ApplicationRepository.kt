@@ -7,6 +7,7 @@ import java.util.*
 
 interface ApplicationRepository {
     fun insert(req: CreateApplicationRequest, studentId: UUID): UUID?
+    fun get(id: String): Application?
     fun getByVacancy(vacancyId: String): List<Application>
     fun getByStudent(studentId: String): List<Application>
     fun updateStatus(applicationId: String, status: ApplicationStatus): Boolean

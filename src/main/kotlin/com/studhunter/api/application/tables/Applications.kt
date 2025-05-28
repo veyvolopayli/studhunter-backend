@@ -33,7 +33,14 @@ object Applications : Table("applications"), ApplicationRepository {
             }
         }
         newId
-    } catch (e: Exception) { null }
+    } catch (e: Exception) {
+        null
+    }
+
+    override fun get(id: String): Application? = transaction {
+        select { Applications.id eq UUID.fromString(id) }
+            .singleOrNull()?.toApplication()
+    }
 
     override fun getByVacancy(vacancyId: String): List<Application> = transaction {
         select { Applications.vacancyId eq UUID.fromString(vacancyId) }

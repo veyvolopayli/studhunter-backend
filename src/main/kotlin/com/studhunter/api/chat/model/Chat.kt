@@ -6,9 +6,9 @@ import java.util.*
 @Serializable
 data class Chat(
     val id: String = UUID.randomUUID().toString(),
-    val publicationId: String,
-    val customerId: String,
-    val sellerId: String,
-    var lastMessage: String,
-    val timestamp: Long = getTimeMillis()
+    val vacancyId: String,        // вакансия-источник чата
+    val employerId: String,       // владелец вакансии
+    val studentId: String,        // откликнувшийся студент
+    var lastMessage: String = "", // текст последнего сообщения
+    val createdAt: Long = getTimeMillis()
 )
