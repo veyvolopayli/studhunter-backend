@@ -99,17 +99,16 @@ fun Route.signIn(
     tokenConfig: TokenConfig
 ) {
     post("signin") {
-
-        val request = call.receiveNullable<SignInRequest>() ?: kotlin.run {
+        val request = call.receiveNullable<SignInRequest>() ?: run {
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
-
-        val user = Users.getUserDetailed(request.username) ?: kotlin.run {
-            call.respond(status = HttpStatusCode.BadRequest, message = "User does not exist")
-            return@post
+        val user = Users.getUserDetailed(request.username) ?: run {
+            call.respond(
+                status = HttpStatusCode.BadRequest,
+                message = "Пользователь не существует"
+            ); return@post
         }
-
         val isValidPassword = hashingService.verify(
             value = request.password,
             saltedHash = SaltedHash(
@@ -117,44 +116,23 @@ fun Route.signIn(
                 salt = user.salt
             )
         )
-
         if (!isValidPassword) {
-            call.respond(HttpStatusCode.Conflict, "Incorrect username or password")
-            return@post
+            call.respond(
+                HttpStatusCode.Conflict,
+                "Неправильный логин или пароль"
+            ); return@post
         }
-
-        val token = tokenService.generate(config = tokenConfig, TokenClaim(name = "userId", value = user.id.toString()))
-
-        call.respond(status = HttpStatusCode.OK, message = AuthResponse(token = token))
-
-        /*val request = call.receiveNullable<SignInRequest>() ?: kotlin.run {
-            call.respond(HttpStatusCode.BadRequest)
-            return@post
-        }
-
-        val user = userDataSource.getUserByUsername(request.username)
-
-        if (user == null) {
-            call.respond(HttpStatusCode.Conflict, "Incorrect username or password")
-            return@post
-        }
-
-        val isValidPassword = hashingService.verify(
-            value = request.password,
-            saltedHash = SaltedHash(
-                hash = user.password,
-                salt = user.salt
+        val token = tokenService.generate(
+            config = tokenConfig,
+            TokenClaim(
+                name = "userId",
+                value = user.id.toString()
             )
         )
-
-        if (!isValidPassword) {
-            call.respond(HttpStatusCode.Conflict, "Incorrect username or password")
-            return@post
-        }
-
-        val token = tokenService.generate(config = tokenConfig, TokenClaim(name = "userId", value = user.id))
-
-        call.respond(status = HttpStatusCode.OK, message = AuthResponse(token = token))*/
+        call.respond(
+            status = HttpStatusCode.OK,
+            message = AuthResponse(token = token)
+        )
     }
 }
 
