@@ -32,8 +32,10 @@ fun Route.userRouting(userRepository: UsersRepository, s3: AmazonS3) {
 
     get("universities/get") {
         val universities = Universities.getUniversities() ?: run {
-            call.respond(status = HttpStatusCode.InternalServerError, "Couldn't get universities")
-            return@get
+            call.respond(
+                status = HttpStatusCode.InternalServerError,
+                message = "Couldn't get universities"
+            ); return@get
         }
         call.respond(status = HttpStatusCode.OK, message = universities)
     }

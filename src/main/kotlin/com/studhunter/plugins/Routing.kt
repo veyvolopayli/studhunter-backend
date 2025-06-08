@@ -4,7 +4,6 @@ import com.amazonaws.services.s3.AmazonS3
 import com.studhunter.api.auth.routes.*
 import com.studhunter.api.chat.routing.chatRoutes
 import com.studhunter.api.chat.routing.normalChatRoutes
-import com.studhunter.api.chat.routing.veryNormalChatRoutes
 import com.studhunter.api.email.routes.emailRouting
 import com.studhunter.api.email.service.EmailService
 import com.studhunter.api.favorites.routing.favoritePublicationRoutes
@@ -18,6 +17,7 @@ import com.studhunter.api.updates.repository.UpdateRepository
 import com.studhunter.api.updates.routes.updateRoutes
 import com.studhunter.api.users.repository.UsersRepository
 import com.studhunter.api.users.routing.userRouting
+import com.studhunter.api.vacancy.routing.vacancyRoutes
 import com.studhunter.security.hashing.HashingService
 import com.studhunter.security.token.TokenConfig
 import com.studhunter.security.token.TokenService
@@ -54,13 +54,14 @@ fun Application.configureRouting(
         updateRoutes(ycUpdateRepository)
 //        chatRoutes()
 //        normalChatRoutes()
-        veryNormalChatRoutes()
+//        veryNormalChatRoutes()
         favoritePublicationRoutes()
         taskRoutes()
+        vacancyRoutes()
 
         get("/") {
             call.respond(
-                message = "посоветуйте ониме аниме новичку\nтвое имя\nантон\nа?\nче звал сларк",
+                message = "StudHunter - сервис поиска стажировок для студентов.",
                 status = HttpStatusCode.OK
             )
         }

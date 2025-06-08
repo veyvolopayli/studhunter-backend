@@ -21,6 +21,9 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Database.createTables(): Database {
     transaction(this) {
+        SchemaUtils.drop(
+            Universities
+        )
         SchemaUtils.create(
             Chats,
 //            OfferRequests,
@@ -43,6 +46,9 @@ fun Database.createTables(): Database {
             Vacancies
         )
     }
+    println("////////////////////////")
+
+    println(Universities.insertUniversities())
 
     return this
 }

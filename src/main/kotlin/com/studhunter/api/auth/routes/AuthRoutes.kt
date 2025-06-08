@@ -3,6 +3,7 @@ package com.studhunter.api.auth.routes
 import com.studhunter.api.auth.requests.SignInRequest
 import com.studhunter.api.auth.requests.SignUpRequest
 import com.studhunter.api.auth.responses.AuthResponse
+import com.studhunter.api.auth.responses.SimpleResponse
 import com.studhunter.api.email.service.EmailService
 import com.studhunter.api.users.model.User
 import com.studhunter.api.users.tables.UserData
@@ -148,8 +149,10 @@ fun Route.getUserId() {
     authenticate {
         get("userid") {
             val principal = call.principal<JWTPrincipal>()
-            val userId = principal?.getClaim("userId", String::class)
-            call.respond(HttpStatusCode.OK, "$userId")
+            val userId = principal?.getClaim("userId", String::class) ?: run {
+                call.respond(HttpStatusCode.Unauthorized); return@get
+            }
+            call.respond(HttpStatusCode.OK, SimpleResponse(userId))
         }
     }
 }
