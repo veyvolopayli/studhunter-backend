@@ -68,8 +68,9 @@ fun Route.signUp(
 
         try {
             Users.insertUser(newUser)
-        } catch (e: ExposedSQLException) {
+        } catch (e: Exception) {
             call.respond(status = HttpStatusCode.Conflict, message = "User already exists")
+            return@post
         }
 
         val userDataModel = com.studhunter.api.users.model.UserDataModel(userId = newUser.id)
